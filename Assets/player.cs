@@ -2,35 +2,46 @@ using UnityEngine;
 
 public class player : MonoBehaviour
 {
-    public Rigidbody2D rb;
+    private Rigidbody2D rb;
+    private Animator anim;
 
     [Header("Move Info")]
-    public float moveSpeed;
-    public float jumpForce;
-    private bool begin_Run;
+    [SerializeField] private float moveSpeed;
+    [SerializeField] private float jumpForce;
+    private bool playerUnlocked;
 
     [Header("Collision Info")]
-    public float groundDistance;
-    public LayerMask whatsIsGround;
+    [SerializeField] private float groundDistance;
+    [SerializeField] private LayerMask whatsIsGround;
     private bool isGrounded;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+        rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (begin_Run == true)
-        {
-            rb.linearVelocity = new Vector2(moveSpeed, rb.linearVelocity.y);
-        }
+        AnimatorControllers();
 
         checkGroundCollision();
 
         checkInput();
+    }
+
+    private void AnimatorControllers()
+    {
+        anim.SetBool("IsGrounded", isGrounded);
+        anim.SetFloat("xVelocity", rb.linearVelocity.x);
+        anim.SetFloat("yVelocity", rb.linearVelocity.y);
+
+        if (playerUnlocked == true)
+        {
+            rb.linearVelocity = new Vector2(moveSpeed, rb.linearVelocity.y);
+        }
     }
 
     private void checkGroundCollision()
@@ -42,7 +53,7 @@ public class player : MonoBehaviour
     {
         if (Input.GetButtonDown("Fire2"))
         {
-            begin_Run = true;
+            playerUnlocked = true;
         }
 
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
