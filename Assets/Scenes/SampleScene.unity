@@ -1398,12 +1398,17 @@ MonoBehaviour:
   moveSpeed: 12
   jumpForce: 18
   doubleJumpForce: 12
+  slideSpeed: 20
+  slideTime: 0.4
+  slideCooldown: 1
   groundDistance: 1.4
+  ceilingCheckDistance: 1
   whatsIsGround:
     serializedVersion: 2
     m_Bits: 8
   wallCheck: {fileID: 1665693480}
-  wallSize: {x: 0.5, y: 2.25}
+  wallSize: {x: 0.3, y: 2.25}
+  ledgeDetected: 0
 --- !u!95 &845745383
 Animator:
   serializedVersion: 7
