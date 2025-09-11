@@ -123,6 +123,18 @@ public class player : MonoBehaviour
         checkInput();
     }
 
+    public void Damage()
+    {
+        if (moveSpeed >= MaxSpeed)
+        {
+            knockBack();
+        }
+        else
+        {
+            StartCoroutine(Death());
+        }
+    }
+
     private IEnumerator Death()
     {
         isDead = true;
@@ -130,9 +142,12 @@ public class player : MonoBehaviour
         rb.linearVelocity = knockBackDir;
         anim.SetBool("IsDead", true);
 
-        yield return new WaitForSeconds(.5f);
 
+        yield return new WaitForSeconds(.5f);
         rb.linearVelocity = new Vector2(0, 0);
+        yield return new WaitForSeconds(1f);
+        GameManager.instance.RestartLevel();
+
     }
 
     private IEnumerator Invincibility()
@@ -180,6 +195,7 @@ public class player : MonoBehaviour
             return;
         }
 
+        SpeedReset();
         StartCoroutine(Invincibility());
         IsKnocked = true;
         rb.linearVelocity = knockBackDir;
