@@ -10,8 +10,8 @@ public class player : MonoBehaviour
 
     [Header("Death Info")]
     private bool isDead;
-
-    private bool playerUnlocked;
+    [HideInInspector] public bool playerUnlocked;
+    [HideInInspector] public bool extraLife;
 
     [Header("Knockback Info")]
     [SerializeField] private Vector2 knockBackDir;
@@ -86,6 +86,8 @@ public class player : MonoBehaviour
         slideTimeCount -= Time.deltaTime;
         slideCooldownCounter -= Time.deltaTime;
 
+        extraLife = moveSpeed >= MaxSpeed;
+
         if (Input.GetKeyDown(KeyCode.K))
         {
             knockBack();
@@ -125,7 +127,7 @@ public class player : MonoBehaviour
 
     public void Damage()
     {
-        if (moveSpeed >= MaxSpeed)
+        if (extraLife)
         {
             knockBack();
         }
@@ -147,7 +149,6 @@ public class player : MonoBehaviour
         rb.linearVelocity = new Vector2(0, 0);
         yield return new WaitForSeconds(1f);
         GameManager.instance.RestartLevel();
-
     }
 
     private IEnumerator Invincibility()
@@ -330,10 +331,10 @@ public class player : MonoBehaviour
     }
     private void checkInput()
     {
-        if (Input.GetButtonDown("Fire2"))
-        {
-            playerUnlocked = true;
-        }
+        //if (Input.GetButtonDown("Fire2"))
+        //{
+        //    playerUnlocked = true;
+        //}
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
