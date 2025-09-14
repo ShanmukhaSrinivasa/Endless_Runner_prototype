@@ -10,7 +10,6 @@ public class LedgeDetection : MonoBehaviour
 
     private BoxCollider2D boxCd => GetComponent<BoxCollider2D>();
 
-
     private void Update()
     {
         if (canDetected)
@@ -29,6 +28,16 @@ public class LedgeDetection : MonoBehaviour
 
     private void OnTriggerExit2D(Collider2D collision)
     {
+        Collider2D[] colliders = Physics2D.OverlapBoxAll(boxCd.bounds.center, boxCd.bounds.size, 0);
+
+        foreach (var hit in colliders)
+        {
+            if (hit.gameObject.GetComponent<PlatformController>() != null)
+            {
+                return;
+            }
+        }
+
         if (collision.gameObject.layer == LayerMask.NameToLayer("Ground"))
         {
             canDetected = true;

@@ -12,12 +12,16 @@ public class player : MonoBehaviour
     [HideInInspector] public bool playerUnlocked;
     [HideInInspector] public bool extraLife;
 
+    [Header("VFX")]
+    [SerializeField] private ParticleSystem dustFX;
+
     [Header("Knockback Info")]
     [SerializeField] private Vector2 knockBackDir;
     private bool IsKnocked;
     private bool canBeKnocked = true;
 
     [Header("Move Info")]
+    [SerializeField] private float speedToSurvive = 18;
     [SerializeField] private float moveSpeed;
     [SerializeField] private float MaxSpeed;
     [SerializeField] private float speedMultiplier;
@@ -26,6 +30,8 @@ public class player : MonoBehaviour
     [SerializeField] private float milestoneIncreaser;
     private float defaultMileStoneIncreaser;
     private float speedMilestone;
+
+    private bool readyToLand;
 
     [Header("Jump Info")]
     [SerializeField] private float jumpForce;
@@ -85,7 +91,7 @@ public class player : MonoBehaviour
         slideTimeCount -= Time.deltaTime;
         slideCooldownCounter -= Time.deltaTime;
 
-        extraLife = moveSpeed >= MaxSpeed;
+        extraLife = moveSpeed >= speedToSurvive;
 
         if (Input.GetKeyDown(KeyCode.K))
         {
@@ -119,9 +125,24 @@ public class player : MonoBehaviour
 
         speedController();
 
+        CheckForLanding();
         checkForLedge();
         checkForSlideCancel();
         checkInput();
+    }
+
+    private void CheckForLanding()
+    {
+        if (rb.linearVelocity.y < -5 && !isGrounded)
+        {
+            readyToLand = true;
+        }
+
+        if (readyToLand && isGrounded)
+        {
+            dustFX.Play();
+            readyToLand = false;
+        }
     }
 
     public void Damage()
@@ -212,6 +233,11 @@ public class player : MonoBehaviour
     #region Speed Control
     private void SpeedReset()
     {
+        if (IsSliding)
+        {
+            return;
+        }
+
         moveSpeed = defaultSpeed; ;
         milestoneIncreaser = defaultMileStoneIncreaser;
     }
@@ -305,8 +331,14 @@ public class player : MonoBehaviour
     #region Input
     private void slidingButton()
     {
+        if (isDead)
+        {
+            return;
+        }
+
         if (rb.linearVelocity.x != 0 && slideCooldownCounter < 0)
         {
+            dustFX.Play();
             IsSliding = true;
             slideTimeCount = slideTime;
             slideCooldownCounter = slideCooldown;
@@ -316,22 +348,29 @@ public class player : MonoBehaviour
     private void jumpButton()
     {
         
-        if(IsSliding)
+        if(IsSliding || isDead)
         {
             return;
         }
 
+        RollAnimFinished();
+
         if(isGrounded)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            AudioManager.instance.PlaySFX(Random.Range(1, 2));
+            Jump(jumpForce);
         }
         else if(canDoubleJump)
         {
             canDoubleJump = false;
-            AudioManager.instance.PlaySFX(Random.Range(1, 2));
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, doubleJumpForce);
+            Jump(doubleJumpForce);
         }
+    }
+
+    private void Jump(float force)
+    {
+        dustFX.Play();
+        AudioManager.instance.PlaySFX(Random.Range(1, 2));
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, force);
     }
     private void checkInput()
     {
@@ -371,7 +410,7 @@ public class player : MonoBehaviour
         
     }
 
-    private void rollAnimFinished()
+    private void RollAnimFinished()
     {
         anim.SetBool("canRoll", false);
     }
