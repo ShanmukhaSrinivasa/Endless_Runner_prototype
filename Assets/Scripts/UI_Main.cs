@@ -7,6 +7,8 @@ public class UI_Main : MonoBehaviour
     private bool gamePaused;
 
     [SerializeField] private GameObject mainMenu;
+    [SerializeField] private GameObject endGame;
+    [Space]
 
     [SerializeField] private TextMeshProUGUI lastScoreText;
     [SerializeField] private TextMeshProUGUI highScoreText;
@@ -16,7 +18,7 @@ public class UI_Main : MonoBehaviour
     private void Start()
     {
         SwitchMenuTo(mainMenu);
-        Time.timeScale = 1;
+
 
         lastScoreText.text = "Last Score:  " + PlayerPrefs.GetFloat("LastScore").ToString("#,#");
         highScoreText.text = "High Score:  " + PlayerPrefs.GetFloat("HighScore").ToString("#,#");
@@ -53,4 +55,8 @@ public class UI_Main : MonoBehaviour
 
     public void RestartGameButton() => GameManager.instance.RestartLevel(); 
 
+    public void OpenEndGameUI()
+    {
+        SwitchMenuTo(endGame);
+    }
 }

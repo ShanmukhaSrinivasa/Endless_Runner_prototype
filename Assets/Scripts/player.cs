@@ -144,11 +144,12 @@ public class player : MonoBehaviour
         rb.linearVelocity = knockBackDir;
         anim.SetBool("IsDead", true);
 
+        Time.timeScale = .6f;
 
         yield return new WaitForSeconds(.5f);
         rb.linearVelocity = new Vector2(0, 0);
-        yield return new WaitForSeconds(1f);
-        GameManager.instance.RestartLevel();
+
+        GameManager.instance.GameEnded();
     }
 
     private IEnumerator Invincibility()
