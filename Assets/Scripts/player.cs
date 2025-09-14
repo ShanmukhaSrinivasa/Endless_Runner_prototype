@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using UnityEngine;
 
@@ -139,6 +138,7 @@ public class player : MonoBehaviour
 
     private IEnumerator Death()
     {
+        AudioManager.instance.PlaySFX(4);
         isDead = true;
         canBeKnocked = false;
         rb.linearVelocity = knockBackDir;
@@ -315,6 +315,7 @@ public class player : MonoBehaviour
 
     private void jumpButton()
     {
+        
         if(IsSliding)
         {
             return;
@@ -323,10 +324,12 @@ public class player : MonoBehaviour
         if(isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            AudioManager.instance.PlaySFX(Random.Range(1, 2));
         }
         else if(canDoubleJump)
         {
             canDoubleJump = false;
+            AudioManager.instance.PlaySFX(Random.Range(1, 2));
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, doubleJumpForce);
         }
     }
