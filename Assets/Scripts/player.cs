@@ -46,7 +46,7 @@ public class player : MonoBehaviour
     [SerializeField] private float slideSpeed;
     [SerializeField] private float slideTime;
     [SerializeField] private float slideCooldown;
-    private float slideCooldownCounter;
+    [HideInInspector] public float slideCooldownCounter;
     private float slideTimeCount;
     private bool IsSliding;
 
@@ -337,7 +337,7 @@ public class player : MonoBehaviour
     }
 
     #region Input
-    private void slidingButton()
+    public void slidingButton()
     {
         if (isDead)
         {
@@ -353,7 +353,7 @@ public class player : MonoBehaviour
         }
     }
 
-    private void jumpButton()
+    public void jumpButton()
     {
         
         if(IsSliding || isDead)
@@ -418,7 +418,7 @@ public class player : MonoBehaviour
         
     }
 
-    private void RollAnimFinished()
+    public void RollAnimFinished()
     {
         anim.SetBool("canRoll", false);
     }

@@ -11,6 +11,8 @@ public class UI_InGame : MonoBehaviour
 
     [SerializeField] private Image heartEmpty;
     [SerializeField] private Image heartFull;
+    [SerializeField] private Image slideIcon;
+
 
     private int coins;
     private float distance;
@@ -25,6 +27,7 @@ public class UI_InGame : MonoBehaviour
 
     private void updateInfo()
     {
+        slideIcon.enabled = player.slideCooldownCounter < 0;
         distance = GameManager.instance.distance;
         coins = GameManager.instance.coins;
 
