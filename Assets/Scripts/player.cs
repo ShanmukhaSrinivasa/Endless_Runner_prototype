@@ -14,6 +14,9 @@ public class player : MonoBehaviour
 
     [Header("VFX")]
     [SerializeField] private ParticleSystem dustFX;
+    [SerializeField] private ParticleSystem bloodSplatterFX;
+    
+
 
     [Header("Knockback Info")]
     [SerializeField] private Vector2 knockBackDir;
@@ -147,6 +150,8 @@ public class player : MonoBehaviour
 
     public void Damage()
     {
+        bloodSplatterFX.Play();
+
         if (extraLife)
         {
             knockBack();
@@ -168,6 +173,9 @@ public class player : MonoBehaviour
         Time.timeScale = .6f;
 
         yield return new WaitForSeconds(.5f);
+
+        Time.timeScale = 1f;
+
         rb.linearVelocity = new Vector2(0, 0);
 
         GameManager.instance.GameEnded();

@@ -12,6 +12,10 @@ public class UI_Main : MonoBehaviour
     [SerializeField] private GameObject endGame;
     [Space]
 
+    [Header("VFX")]
+    [SerializeField] private ParticleSystem[] fireWorks;
+    [Space]
+
     [SerializeField] private TextMeshProUGUI lastScoreText;
     [SerializeField] private TextMeshProUGUI highScoreText;
     [SerializeField] private TextMeshProUGUI coinsText;
@@ -67,6 +71,11 @@ public class UI_Main : MonoBehaviour
     public void startGameButton()
     {
         muteIcon = inGameMuteIcon;
+
+        for(int i=0; i<fireWorks.Length; i++)
+        {
+            fireWorks[i].Play();
+        }
         
         if (gameMuted)
         {
