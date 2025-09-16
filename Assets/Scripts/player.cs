@@ -420,6 +420,7 @@ public class player : MonoBehaviour
 
     public void RollAnimFinished()
     {
+
         anim.SetBool("canRoll", false);
     }
 

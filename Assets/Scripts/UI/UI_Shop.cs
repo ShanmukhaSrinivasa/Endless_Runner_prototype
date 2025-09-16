@@ -40,35 +40,73 @@ public class UI_Shop : MonoBehaviour
     {
         coinsText.text = PlayerPrefs.GetInt("Coins").ToString("#,#");
 
-        for (int i=0; i<platformColor.Length; i++)
-        {
-            Color color = platformColor[i].color;
-            int price = platformColor[i].price;
+        // Set up both shops using our new, reusable function
+        SetupColorShop(platformColor, platformColorButton, platformColorParent, ColorType.platformColor);
+        SetupColorShop(playerColor, playerColorButton, playerColorParent, ColorType.playerColor);
 
-            GameObject newButton = Instantiate(platformColorButton, platformColorParent);
+        // Reflect the currently loaded colors
+        platformDisplay.color = GameManager.instance.platformColor;
+        playerDisplay.color = GameManager.instance.playerColor;
 
-            newButton.transform.GetChild(0).GetComponent<Image>().color = color;
-            newButton.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text= price.ToString();
+        //for (int i=0; i<platformColor.Length; i++)
+        //{
+        //    Color color = platformColor[i].color;
+        //    int price = platformColor[i].price;
 
-            newButton.GetComponent<Button>().onClick.AddListener(() => PlatformPurchaseColor(color, price, ColorType.platformColor));
-        }
+        //    GameObject newButton = Instantiate(platformColorButton, platformColorParent);
 
-        for (int i = 0; i < playerColor.Length; i++)
-        {
-            Color color = playerColor[i].color;
-            int price = playerColor[i].price;
+        //    newButton.transform.GetChild(0).GetComponent<Image>().color = color;
+        //    newButton.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text= price.ToString();
 
-            GameObject newButton = Instantiate(playerColorButton, playerColorParent);
+        //    newButton.GetComponent<Button>().onClick.AddListener(() => PlatformPurchaseColor(color, price, ColorType.platformColor));
+        //}
 
-            newButton.transform.GetChild(0).GetComponent<Image>().color = color;
-            newButton.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = price.ToString();
+        //for (int i = 0; i < playerColor.Length; i++)
+        //{
+        //    Color color = playerColor[i].color;
+        //    int price = playerColor[i].price;
 
-            newButton.GetComponent<Button>().onClick.AddListener(() => PlatformPurchaseColor(color, price, ColorType.playerColor));
-        }
+        //    GameObject newButton = Instantiate(playerColorButton, playerColorParent);
+
+        //    newButton.transform.GetChild(0).GetComponent<Image>().color = color;
+        //    newButton.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = price.ToString();
+
+        //    newButton.GetComponent<Button>().onClick.AddListener(() => PlatformPurchaseColor(color, price, ColorType.playerColor));
+        //}
 
     }
 
-    public void PlatformPurchaseColor(Color color, int price, ColorType colorType)
+    private void SetupColorShop(ColorToSell[] colorsToSell, GameObject buttonPrefab, Transform parent, ColorType colorType)
+    {
+        for (int i = 0; i < colorsToSell.Length; i++)
+        {
+            Color color = colorsToSell[i].color;
+            int price = colorsToSell[i].price;
+            int colorIndex = i; // Capture index for the listener
+
+            GameObject newButton = Instantiate(buttonPrefab, parent);
+            newButton.transform.GetChild(0).GetComponent<Image>().color = color;
+
+            // Generate a unique key for ownership, e.g., "platformColor_Owned_0"
+            string ownershipKey = $"{colorType}_Owned_{colorIndex}";
+
+            // Check if the color is owned
+            if (PlayerPrefs.GetInt(ownershipKey, 0) == 1)
+            {
+                // If owned, disable the button and show "Owned"
+                newButton.GetComponent<Button>().interactable = false;
+                newButton.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = "Owned";
+            }
+            else
+            {
+                // If not owned, set the price and the purchase listener
+                newButton.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = price.ToString();
+                newButton.GetComponent<Button>().onClick.AddListener(() => PurchaseColor(color, price, colorIndex, colorType));
+            }
+        }
+    }
+
+    public void PurchaseColor(Color color, int price, int colorIndex, ColorType colorType)
     {
         AudioManager.instance.PlaySFX(3);
 
@@ -77,17 +115,25 @@ public class UI_Shop : MonoBehaviour
             if (colorType == ColorType.platformColor)
             {
                 GameManager.instance.platformColor = color;
-                GameManager.instance.SaveColor(color.r, color.g, color.b, color.a);
+                GameManager.instance.SavePlatformColor(color); // Call specific save function
                 platformDisplay.color = color;
             }
             else if (colorType == ColorType.playerColor)
             {
-                GameManager.instance.player.GetComponent<SpriteRenderer>().color = color;
-                GameManager.instance.SaveColor(color.r, color.g, color.b, color.a);
+                GameManager.instance.playerColor = color;
+                GameManager.instance.player.GetComponent<SpriteRenderer>().color = color; // Apply color immediately
+                GameManager.instance.SavePlayerColor(color);   // Call specific save function
                 playerDisplay.color = color;
             }
 
-            StartCoroutine(NotifyText("Purchase Succesfull", 2));
+            // Save the ownership status with the unique key
+            string ownershipKey = $"{colorType}_Owned_{colorIndex}";
+            PlayerPrefs.SetInt(ownershipKey, 1);
+            PlayerPrefs.Save();
+
+            StartCoroutine(NotifyText("Purchase Successful!", 2));
+
+            RefreshShopUI(); // Refresh the shop to show the new "Owned" status
         }
         else
         {
@@ -95,11 +141,21 @@ public class UI_Shop : MonoBehaviour
         }
     }
 
+    // This function will rebuild the shop UI to reflect a new purchase immediately
+    private void RefreshShopUI()
+    {
+        foreach (Transform child in platformColorParent) Destroy(child.gameObject);
+        foreach (Transform child in playerColorParent) Destroy(child.gameObject);
+
+        SetupColorShop(platformColor, platformColorButton, platformColorParent, ColorType.platformColor);
+        SetupColorShop(playerColor, playerColorButton, playerColorParent, ColorType.playerColor);
+    }
+
     private bool EnoughMoney(int price)
     {
         int myCoins = PlayerPrefs.GetInt("Coins");
 
-        if (myCoins > price)
+        if (myCoins >= price)
         {
             int newAmountOfCoins = myCoins - price;
             PlayerPrefs.SetInt("Coins", newAmountOfCoins);
