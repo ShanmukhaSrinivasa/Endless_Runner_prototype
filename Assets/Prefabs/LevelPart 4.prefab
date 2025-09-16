@@ -18185,16 +18185,12 @@ PrefabInstance:
       value: MovingTrap
       objectReference: {fileID: 0}
     - target: {fileID: 7156313802069425367, guid: 5dd673ffa27440a4a901e86b1180ac06, type: 3}
-      propertyPath: m_RootOrder
-      value: 58
-      objectReference: {fileID: 0}
-    - target: {fileID: 7156313802069425367, guid: 5dd673ffa27440a4a901e86b1180ac06, type: 3}
       propertyPath: m_LocalPosition.x
       value: 83.26012
       objectReference: {fileID: 0}
     - target: {fileID: 7156313802069425367, guid: 5dd673ffa27440a4a901e86b1180ac06, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.8042698
+      value: 0.34
       objectReference: {fileID: 0}
     - target: {fileID: 7156313802069425367, guid: 5dd673ffa27440a4a901e86b1180ac06, type: 3}
       propertyPath: m_LocalPosition.z
