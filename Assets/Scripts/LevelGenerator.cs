@@ -24,7 +24,7 @@ public class LevelGenerator : MonoBehaviour
         {
             Transform part = levelPart[Random.Range(0, levelPart.Length)];
 
-            Vector2 newPosition = new Vector2(nextPosition.x - part.Find("StartPoint").position.x, 0);
+            Vector2 newPosition = new Vector2(nextPosition.x - part.Find("StartPoint").localPosition.x, 0);
 
             Transform newPart = Instantiate(part, newPosition, transform.rotation, transform);
 
