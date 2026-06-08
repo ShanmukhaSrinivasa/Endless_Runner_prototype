@@ -1,5 +1,4 @@
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -68,7 +67,7 @@ public class UI_Main : MonoBehaviour
             AudioListener.volume = 1;
         }
     }
-    public void startGameButton()
+    public void StartGameButton()
     {
         muteIcon = inGameMuteIcon;
 
@@ -84,7 +83,7 @@ public class UI_Main : MonoBehaviour
         GameManager.instance.UnlockPlayer();
     }
 
-    public void gamePauseButton()
+    public void GamePauseButton()
     {
         if (gamePaused)
         {
@@ -103,5 +102,27 @@ public class UI_Main : MonoBehaviour
     public void OpenEndGameUI()
     {
         SwitchMenuTo(endGame);
+    }
+
+    public void StartSinglePlayer()
+    {
+        GameManager.instance.currentGameMode = GameMode.SinglePlayer;
+
+        Debug.Log("Satrt Single Player");
+
+        GameManager.instance.StartGame();
+        StartGameButton();
+    }
+
+    public void StartMultiPlayer()
+    {
+        GameManager.instance.currentGameMode = GameMode.Multiplayer;
+
+        Debug.Log("Start MultiPlayer");
+
+        GameManager.instance.StartGame();
+
+        // Temporary
+        SwitchMenuTo(mainMenu);
     }
 }

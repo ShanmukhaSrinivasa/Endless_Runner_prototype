@@ -4,7 +4,7 @@ public class trap : MonoBehaviour
 {
     [SerializeField] protected float chanceToSpawn = 60;
 
-    protected virtual void start()
+    protected virtual void Start()
     {
         bool canSpawn = chanceToSpawn >= Random.Range(0, 100);
 

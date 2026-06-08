@@ -21,11 +21,11 @@ public class UI_InGame : MonoBehaviour
     private void Start()
     {
         player = GameManager.instance.player;
-        InvokeRepeating("updateInfo", 0, .2f);
+        InvokeRepeating("UpdateInfo", 0, .2f);
         
     }
 
-    private void updateInfo()
+    private void UpdateInfo()
     {
         slideIcon.enabled = player.slideCooldownCounter < 0;
         distance = GameManager.instance.distance;
@@ -42,6 +42,6 @@ public class UI_InGame : MonoBehaviour
         }
 
         heartEmpty.enabled = !player.extraLife;
-        heartFull.enabled = !player.extraLife;
+        heartFull.enabled = player.extraLife;
     }
 }

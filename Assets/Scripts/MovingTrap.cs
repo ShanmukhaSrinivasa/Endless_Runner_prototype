@@ -8,9 +8,9 @@ public class MovingTrap : trap
 
     private int i;
 
-    protected override void start()
+    protected override void Start()
     {
-        base.start();
+        base.Start();
         transform.position = movePoint[0].position;
     }
 

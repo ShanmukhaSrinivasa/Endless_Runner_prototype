@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
+    public GameMode currentGameMode = GameMode.SinglePlayer;
 
     public UI_Main ui;
 
@@ -25,6 +26,12 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        if(instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         instance = this;
 
         Time.timeScale = 1;
@@ -103,6 +110,28 @@ public class GameManager : MonoBehaviour
 
     }
 
+    public void StartGame()
+    {
+        if (currentGameMode == GameMode.SinglePlayer)
+        {
+            StartSinglePlayer();
+        }
+        else if (currentGameMode == GameMode.Multiplayer)
+        {
+            StartMultiPlayer();
+        }
+    }
+
+    private void StartSinglePlayer()
+    {
+        Debug.Log("Single Player Systems Started");
+    }
+
+    private void StartMultiPlayer()
+    {
+        Debug.Log("Multiplayer Systems Started");
+    }
+
     public void RestartLevel()
     {
         SceneManager.LoadScene(0);
@@ -110,6 +139,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+
         if (player.transform.position.x > distance)
         {
             distance = player.transform.position.x;
@@ -138,5 +168,15 @@ public class GameManager : MonoBehaviour
     {
         SaveInfo();
         ui.OpenEndGameUI();
+    }
+
+    public bool IsSinglePlayer()
+    {
+        return currentGameMode == GameMode.SinglePlayer;
+    }
+
+    public bool IsMultiPlayer()
+    {
+        return currentGameMode == GameMode.Multiplayer;
     }
 }
