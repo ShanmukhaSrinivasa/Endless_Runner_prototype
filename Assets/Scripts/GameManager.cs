@@ -150,6 +150,13 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+        if (player == null)
+        {
+            player = FindFirstObjectByType<player>();
+
+            if (player == null)
+                return;
+        }
 
         if (player.transform.position.x > distance)
         {

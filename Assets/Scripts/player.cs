@@ -1,7 +1,9 @@
 using System.Collections;
+using System.Globalization;
+using Unity.Netcode;
 using UnityEngine;
 
-public class player : MonoBehaviour
+public class player : NetworkBehaviour
 {
     private Rigidbody2D rb;
     private Animator anim;
@@ -87,6 +89,11 @@ public class player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (!IsOwner)
+        {
+            return;
+        }
+
         AnimatorControllers();
 
         checkGroundCollision();
@@ -132,6 +139,14 @@ public class player : MonoBehaviour
         checkForLedge();
         checkForSlideCancel();
         checkInput();
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        if (IsOwner)
+        {
+            GameManager.instance.player = this;
+        }
     }
 
     private void CheckForLanding()
@@ -355,8 +370,9 @@ public class player : MonoBehaviour
 
     public void jumpButton()
     {
-        
-        if(IsSliding || isDead)
+        Debug.Log($"Jump Pressed | Owner:{OwnerClientId} | IsOwner:{IsOwner} | Grounded:{isGrounded}");
+
+        if (IsSliding || isDead)
         {
             return;
         }
@@ -379,6 +395,8 @@ public class player : MonoBehaviour
         dustFX.Play();
         AudioManager.instance.PlaySFX(Random.Range(1, 2));
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, force);
+
+        Debug.Log($"JUMP EXECUTED | IsOwner:{IsOwner} | YVel:{rb.linearVelocity.y}");
     }
     private void checkInput()
     {

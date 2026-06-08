@@ -5,6 +5,8 @@ using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using System.Collections.Generic;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 
 public class MultiplayerLobbyManager : MonoBehaviour
@@ -18,12 +20,25 @@ public class MultiplayerLobbyManager : MonoBehaviour
     [Header("Relay")]
     private string relayJoinCode;
 
-
+    private Allocation hostAllocation;
     private Lobby currentLobby;
 
     private void Awake()
     {
         Instance = this;
+
+        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+    }
+
+    private void OnClientConnected(ulong clientId)
+    {
+        Debug.Log("CLIENT CONNECTED: " + clientId);
+    }
+
+    private void OnClientDisconnected(ulong clientId)
+    {
+        Debug.Log("CLIENT DISCONNECTED: " + clientId);
     }
 
     public async void CreateRoom()
@@ -51,6 +66,9 @@ public class MultiplayerLobbyManager : MonoBehaviour
             {
                 roomCodeText.text = "Room Code: " + currentLobby.LobbyCode;
             }
+
+            ConfigureHostRelay();
+            StartHost();
         }
         catch(System.Exception e)
         {
@@ -75,6 +93,8 @@ public class MultiplayerLobbyManager : MonoBehaviour
                 string relayCode = currentLobby.Data["RelayCode"].Value;
 
                 Debug.Log("Relay Code: " + relayCode);
+
+                await JoinRelay(relayCode);
             }
             else
             {
@@ -96,9 +116,9 @@ public class MultiplayerLobbyManager : MonoBehaviour
     {
         try
         {
-            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(4);
+            hostAllocation = await RelayService.Instance.CreateAllocationAsync(4);
 
-            relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+            relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(hostAllocation.AllocationId);
 
             Debug.Log("Relay Created!");
             Debug.Log("Relay Join Code: " + relayJoinCode);
@@ -107,6 +127,58 @@ public class MultiplayerLobbyManager : MonoBehaviour
         {
             Debug.LogError(e);
         }
+    }
+
+    private async Task JoinRelay(string relayCode)
+    {
+        try
+        {
+            JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(relayCode);
+
+            UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+
+            transport.SetClientRelayData(
+                joinAllocation.RelayServer.IpV4,
+
+                (ushort)joinAllocation.RelayServer.Port,
+                joinAllocation.AllocationIdBytes,
+                joinAllocation.Key,
+                joinAllocation.ConnectionData,
+                joinAllocation.HostConnectionData
+            );
+
+            Debug.Log("CLIENT RELAY CONFIGURED");
+
+            NetworkManager.Singleton.StartClient();
+
+            Debug.Log("CLIENT STARTED");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
+    private void StartHost()
+    {
+        NetworkManager.Singleton.StartHost();
+
+        Debug.Log("HOST STARTED");
+    }
+
+    private void ConfigureHostRelay()
+    {
+        UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+
+        transport.SetHostRelayData(
+            hostAllocation.RelayServer.IpV4,
+            (ushort)hostAllocation.RelayServer.Port,
+            hostAllocation.AllocationIdBytes,
+            hostAllocation.Key,
+            hostAllocation.ConnectionData
+            );
+
+        Debug.Log("HOST RELAY CONFIGURED");
     }
 
     public string GetLobbyCode()
