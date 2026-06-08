@@ -9,6 +9,7 @@ public class UI_Main : MonoBehaviour
 
     [SerializeField] private GameObject mainMenu;
     [SerializeField] private GameObject endGame;
+    [SerializeField] private GameObject multiplayerPanel;
     [Space]
 
     [Header("VFX")]
@@ -23,6 +24,7 @@ public class UI_Main : MonoBehaviour
     [SerializeField] private UI_SliderVolume[] sliders;
     [SerializeField] private Image muteIcon;
     [SerializeField] private Image inGameMuteIcon;
+
 
 
     private void Start()
@@ -80,7 +82,7 @@ public class UI_Main : MonoBehaviour
         {
             muteIcon.color = new Color(1, 1, 1, .3f);
         }
-        GameManager.instance.UnlockPlayer();
+        GameManager.instance.BeginGamePlay();
     }
 
     public void GamePauseButton()
@@ -124,5 +126,31 @@ public class UI_Main : MonoBehaviour
 
         // Temporary
         SwitchMenuTo(mainMenu);
+    }
+
+    public void OpenMultiplayerPanel()
+    {
+        mainMenu.SetActive(false);
+        multiplayerPanel.SetActive(true);
+
+        Debug.Log("Multiplayer Panel opened");
+    }
+
+    public void CloseMutiplayerPanel()
+    {
+        multiplayerPanel.SetActive(false);
+        mainMenu.SetActive(true);
+
+        Debug.Log("Returned to main menu");
+    }
+
+    public void CreateRoom()
+    {
+        Debug.Log("Create room clicked");
+    }
+
+    public void JoinRoom()
+    {
+        Debug.Log("Join room clicked");
     }
 }

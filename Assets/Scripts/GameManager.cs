@@ -24,6 +24,8 @@ public class GameManager : MonoBehaviour
     public float distance;
     public float score;
 
+    public bool gamePlayStarted = false;
+
     private void Awake()
     {
         if(instance != null && instance != this)
@@ -110,6 +112,15 @@ public class GameManager : MonoBehaviour
 
     }
 
+    public void BeginGamePlay()
+    {
+        gamePlayStarted = true;
+
+        UnlockPlayer();
+
+        Debug.Log("Gameplay Started");
+    }
+
     public void StartGame()
     {
         if (currentGameMode == GameMode.SinglePlayer)
@@ -178,5 +189,10 @@ public class GameManager : MonoBehaviour
     public bool IsMultiPlayer()
     {
         return currentGameMode == GameMode.Multiplayer;
+    }
+
+    public bool IsGameplayStarted()
+    {
+        return gamePlayStarted;
     }
 }

@@ -13,9 +13,13 @@ public class LevelGenerator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        deletePlatfrom();
-        GeneratePlatform();
+        if (!GameManager.instance.IsGameplayStarted())
+        {
+            return;
+        }
 
+        DeletePlatfrom();
+        GeneratePlatform();
     }
 
     private void GeneratePlatform()
@@ -32,7 +36,7 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-    private void deletePlatfrom()
+    private void DeletePlatfrom()
     {
         if(transform.childCount > 0)
         {
