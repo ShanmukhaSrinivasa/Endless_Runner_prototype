@@ -41,7 +41,7 @@ public class MultiplayerLobbyManager : MonoBehaviour
                     }
                 }
             };
-            currentLobby = await LobbyService.Instance.CreateLobbyAsync("PixelDashRoom", 5);
+            currentLobby = await LobbyService.Instance.CreateLobbyAsync("PixelDashRoom", 5, options);
 
 
             Debug.Log("Lobby created!");
@@ -67,6 +67,19 @@ public class MultiplayerLobbyManager : MonoBehaviour
             Debug.Log("Trying to join: " + roomCode);
 
             currentLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(roomCode);
+
+            if (currentLobby.Data.ContainsKey("RelayCode"))
+            {
+                Debug.Log("Relay Code Found!");
+
+                string relayCode = currentLobby.Data["RelayCode"].Value;
+
+                Debug.Log("Relay Code: " + relayCode);
+            }
+            else
+            {
+                Debug.Log("Relay Code Missing");
+            }
 
             Debug.Log("Joined Lobby!");
             Debug.Log("Players In Lobby: " + currentLobby.Players.Count);
