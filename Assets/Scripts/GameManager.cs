@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Cinemachine;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
@@ -6,9 +7,13 @@ public class GameManager : MonoBehaviour
     public static GameManager instance;
     public GameMode currentGameMode = GameMode.SinglePlayer;
 
+    [SerializeField] private PlayerSinglePlayer singlePlayerPrefab;
+    [SerializeField] private Transform singlePlayerSpawnPoint;
+
     public UI_Main ui;
 
-    public player player;
+    public player networkPlayer;
+    public PlayerSinglePlayer singlePlayerPlayer;
 
     public bool colorEntirePlatform;
 
@@ -53,9 +58,9 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        if (player != null)
+        if (singlePlayerPlayer != null)
         {
-            player.GetComponent<SpriteRenderer>().color = playerColor;
+            singlePlayerPlayer.GetComponent<SpriteRenderer>().color = playerColor;
         }
     }
 
@@ -135,7 +140,24 @@ public class GameManager : MonoBehaviour
 
     private void StartSinglePlayer()
     {
+        if (singlePlayerPlayer == null)
+        {
+            singlePlayerPlayer = Instantiate(
+                singlePlayerPrefab,
+                singlePlayerSpawnPoint.position,
+                Quaternion.identity);
+        }
+
         Debug.Log("Single Player Systems Started");
+
+        BeginGamePlay();
+
+        CinemachineCamera cineCam =FindFirstObjectByType<CinemachineCamera>();
+
+        if (cineCam != null)
+        {
+            cineCam.Target.TrackingTarget = singlePlayerPlayer.transform;
+        }
     }
 
     private void StartMultiPlayer()
@@ -150,21 +172,41 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (player == null)
+        if (IsSinglePlayer())
         {
-            player = FindFirstObjectByType<player>();
-
-            if (player == null)
+            if (singlePlayerPlayer == null)
                 return;
-        }
 
-        if (player.transform.position.x > distance)
+            if (singlePlayerPlayer.transform.position.x > distance)
+            {
+                distance = singlePlayerPlayer.transform.position.x;
+            }
+        }
+        else
         {
-            distance = player.transform.position.x;
+            if (networkPlayer == null)
+                return;
+
+            if (networkPlayer.transform.position.x > distance)
+            {
+                distance = networkPlayer.transform.position.x;
+            }
         }
     }
 
-    public void UnlockPlayer() => player.playerUnlocked = true;
+    public void UnlockPlayer()
+    {
+        if (IsSinglePlayer())
+        {
+            if (singlePlayerPlayer != null)
+                singlePlayerPlayer.playerUnlocked = true;
+        }
+        else
+        {
+            if (networkPlayer != null)
+                networkPlayer.playerUnlocked = true;
+        }
+    }
 
     public void SaveInfo()
     {

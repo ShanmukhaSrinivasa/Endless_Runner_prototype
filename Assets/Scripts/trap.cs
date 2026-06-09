@@ -15,9 +15,19 @@ public class trap : MonoBehaviour
     }
     protected virtual void OnTriggerEnter2D(Collider2D collision)
     {
-        if(collision.GetComponent<player>() != null)
+        player networkPlayer = collision.GetComponent<player>();
+
+        if (networkPlayer != null)
         {
-            collision.GetComponent<player>().Damage();
+            networkPlayer.Damage();
+        }
+
+        PlayerSinglePlayer singlePlayer =
+            collision.GetComponent<PlayerSinglePlayer>();
+
+        if (singlePlayer != null)
+        {
+            singlePlayer.Damage();
         }
     }
 }

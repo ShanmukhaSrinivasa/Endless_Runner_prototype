@@ -7,24 +7,42 @@ public class LedgeDetection : MonoBehaviour
     [SerializeField] private player player;
     [SerializeField] private Enemy enemy;
 
+    [SerializeField] private PlayerSinglePlayer singlePlayer;
+
     //public bool ledgeDetected;
 
     private bool canDetected;
 
     private BoxCollider2D boxCd => GetComponent<BoxCollider2D>();
 
-    private void Update()
+    private void Start()
     {
-        if(player != null && canDetected)
+        canDetected = true;
+    }
+
+    private void FixedUpdate()
+    {
+        bool detected = false;
+
+        if (canDetected)
         {
-            player.ledgeDetected = Physics2D.OverlapCircle(transform.position, radius, whatIsGround);
+            detected = Physics2D.OverlapCircle(transform.position,radius,whatIsGround);
         }
 
-        if (enemy!= null && canDetected)
+        if (player != null)
         {
-            enemy.ledgeDetected = Physics2D.OverlapCircle(transform.position, radius, whatIsGround);
+            player.ledgeDetected = detected;
         }
 
+        if (singlePlayer != null)
+        {
+            singlePlayer.ledgeDetected = detected;
+        }
+
+        if (enemy != null)
+        {
+            enemy.ledgeDetected = detected;
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -54,6 +72,7 @@ public class LedgeDetection : MonoBehaviour
     }
     private void OnDrawGizmos()
     {
+        Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, radius);
     }
 }

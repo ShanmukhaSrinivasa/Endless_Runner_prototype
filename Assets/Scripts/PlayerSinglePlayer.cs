@@ -1,9 +1,8 @@
 using System.Collections;
 using System.Globalization;
-using Unity.Netcode;
 using UnityEngine;
 
-public class player : NetworkBehaviour
+public class PlayerSinglePlayer : MonoBehaviour
 {
     private Rigidbody2D rb;
     private Animator anim;
@@ -17,7 +16,7 @@ public class player : NetworkBehaviour
     [Header("VFX")]
     [SerializeField] private ParticleSystem dustFX;
     [SerializeField] private ParticleSystem bloodSplatterFX;
-    
+
 
 
     [Header("Knockback Info")]
@@ -81,18 +80,18 @@ public class player : NetworkBehaviour
         anim = GetComponent<Animator>();
         sr = GetComponent<SpriteRenderer>();
 
+        GameManager.instance.singlePlayerPlayer = this;
+
         speedMilestone = milestoneIncreaser;
         defaultSpeed = moveSpeed;
         defaultMileStoneIncreaser = milestoneIncreaser;
+
+        playerUnlocked = true;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (!IsOwner)
-        {
-            return;
-        }
 
         AnimatorControllers();
 
@@ -139,14 +138,6 @@ public class player : NetworkBehaviour
         checkForLedge();
         checkForSlideCancel();
         checkInput();
-    }
-
-    public override void OnNetworkSpawn()
-    {
-        if (IsOwner)
-        {
-            GameManager.instance.networkPlayer = this;
-        }
     }
 
     private void CheckForLanding()
@@ -267,7 +258,7 @@ public class player : NetworkBehaviour
 
     private void speedController()
     {
-        if(moveSpeed == MaxSpeed)
+        if (moveSpeed == MaxSpeed)
         {
             return;
         }
@@ -326,7 +317,7 @@ public class player : NetworkBehaviour
 
     private void checkForSlideCancel()
     {
-        if(slideTimeCount < 0 && !ceilingDetected)
+        if (slideTimeCount < 0 && !ceilingDetected)
         {
             IsSliding = false;
         }
@@ -341,7 +332,7 @@ public class player : NetworkBehaviour
             return;
         }
 
-        if(IsSliding)
+        if (IsSliding)
         {
             rb.linearVelocity = new Vector2(slideSpeed, rb.linearVelocity.y);
         }
@@ -370,7 +361,6 @@ public class player : NetworkBehaviour
 
     public void jumpButton()
     {
-        Debug.Log($"Jump Pressed | Owner:{OwnerClientId} | IsOwner:{IsOwner} | Grounded:{isGrounded}");
 
         if (IsSliding || isDead)
         {
@@ -379,11 +369,11 @@ public class player : NetworkBehaviour
 
         RollAnimFinished();
 
-        if(isGrounded)
+        if (isGrounded)
         {
             Jump(jumpForce);
         }
-        else if(canDoubleJump)
+        else if (canDoubleJump)
         {
             canDoubleJump = false;
             Jump(doubleJumpForce);
@@ -395,8 +385,6 @@ public class player : NetworkBehaviour
         dustFX.Play();
         AudioManager.instance.PlaySFX(Random.Range(1, 2));
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, force);
-
-        Debug.Log($"JUMP EXECUTED | IsOwner:{IsOwner} | YVel:{rb.linearVelocity.y}");
     }
     private void checkInput()
     {
@@ -407,11 +395,13 @@ public class player : NetworkBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            Debug.Log("SPACE DETECTED");
             jumpButton();
         }
 
-        if(Input.GetKeyDown(KeyCode.LeftShift))
+        if (Input.GetKeyDown(KeyCode.LeftShift))
         {
+            Debug.Log("SHIFT DETECTED");
             slidingButton();
         }
     }
@@ -429,11 +419,11 @@ public class player : NetworkBehaviour
         anim.SetBool("canClimb", canClimb);
         anim.SetBool("IsKnocked", IsKnocked);
 
-        if(rb.linearVelocity.y < -20)
+        if (rb.linearVelocity.y < -20)
         {
             anim.SetBool("canRoll", true);
         }
-        
+
     }
 
     public void RollAnimFinished()

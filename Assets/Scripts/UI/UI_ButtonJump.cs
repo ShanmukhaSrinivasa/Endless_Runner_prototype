@@ -5,6 +5,13 @@ public class UI_JumpSlashButtons : MonoBehaviour , IPointerDownHandler
 {
     public void OnPointerDown(PointerEventData eventData)
     {
-        GameManager.instance.player.jumpButton();
+        if (GameManager.instance.IsSinglePlayer())
+        {
+            GameManager.instance.singlePlayerPlayer?.jumpButton();
+        }
+        else
+        {
+            GameManager.instance.networkPlayer?.jumpButton();
+        }
     }
 }

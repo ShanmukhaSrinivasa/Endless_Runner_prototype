@@ -121,7 +121,24 @@ public class UI_Shop : MonoBehaviour
             else if (colorType == ColorType.playerColor)
             {
                 GameManager.instance.playerColor = color;
-                GameManager.instance.player.GetComponent<SpriteRenderer>().color = color; // Apply color immediately
+
+                if (GameManager.instance.IsSinglePlayer())
+                {
+                    if (GameManager.instance.singlePlayerPlayer != null)
+                    {
+                        GameManager.instance.singlePlayerPlayer
+                            .GetComponent<SpriteRenderer>().color = color;
+                    }
+                }
+                else
+                {
+                    if (GameManager.instance.networkPlayer != null)
+                    {
+                        GameManager.instance.networkPlayer
+                            .GetComponent<SpriteRenderer>().color = color;
+                    }
+                }
+
                 GameManager.instance.SavePlayerColor(color);   // Call specific save function
                 playerDisplay.color = color;
             }

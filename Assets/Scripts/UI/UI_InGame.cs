@@ -4,7 +4,8 @@ using UnityEngine.UI;
 
 public class UI_InGame : MonoBehaviour
 {
-    private player player;
+    private PlayerSinglePlayer singlePlayer;
+    private player networkPlayer;
 
     [SerializeField] private TextMeshProUGUI coinsText;
     [SerializeField] private TextMeshProUGUI distanceText;
@@ -20,14 +21,33 @@ public class UI_InGame : MonoBehaviour
 
     private void Start()
     {
-        player = GameManager.instance.player;
+        if (GameManager.instance.IsSinglePlayer())
+        {
+            singlePlayer = GameManager.instance.singlePlayerPlayer;
+        }
+        else
+        {
+            networkPlayer = GameManager.instance.networkPlayer;
+        }
+
         InvokeRepeating("UpdateInfo", 0, .2f);
-        
     }
 
     private void UpdateInfo()
     {
-        slideIcon.enabled = player.slideCooldownCounter < 0;
+        if (GameManager.instance.IsSinglePlayer())
+        {
+            slideIcon.enabled = singlePlayer.slideCooldownCounter < 0;
+            heartEmpty.enabled = !singlePlayer.extraLife;
+            heartFull.enabled = singlePlayer.extraLife;
+        }
+        else
+        {
+            slideIcon.enabled = networkPlayer.slideCooldownCounter < 0;
+            heartEmpty.enabled = !networkPlayer.extraLife;
+            heartFull.enabled = networkPlayer.extraLife;
+        }
+
         distance = GameManager.instance.distance;
         coins = GameManager.instance.coins;
 
@@ -40,8 +60,5 @@ public class UI_InGame : MonoBehaviour
         {
             coinsText.text = GameManager.instance.coins.ToString("#,#");
         }
-
-        heartEmpty.enabled = !player.extraLife;
-        heartFull.enabled = player.extraLife;
     }
 }

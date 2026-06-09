@@ -5,7 +5,7 @@ public class Enemy : MonoBehaviour
 {
     private Rigidbody2D rb;
     private Animator anim;
-    private player player;
+    private Transform playerTransform;
 
     [Header("Movement Details")]
     [SerializeField] private float moveSpeed;
@@ -47,7 +47,15 @@ public class Enemy : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
-        player = GameManager.instance.player;
+
+        if (GameManager.instance.IsSinglePlayer())
+        {
+            playerTransform = GameManager.instance.singlePlayerPlayer.transform;
+        }
+        else
+        {
+            playerTransform = GameManager.instance.networkPlayer.transform;
+        }
 
         rb.linearVelocity = new Vector2(0, 0);
         defaultGravityScale = rb.gravityScale;
@@ -101,8 +109,8 @@ public class Enemy : MonoBehaviour
 
     private void SpeedController()
     {
-        bool playerAhead = player.transform.position.x > transform.position.x;
-        bool playerFarAway = Vector2.Distance(player.transform.position, transform.position) > 2.5f;
+        bool playerAhead = playerTransform.position.x > transform.position.x;
+        bool playerFarAway = Vector2.Distance(playerTransform.position, transform.position) > 2.5f;
 
         if (playerAhead)
         {

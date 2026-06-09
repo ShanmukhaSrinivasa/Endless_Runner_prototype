@@ -1,4 +1,3 @@
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class LevelGenerator : MonoBehaviour
@@ -6,46 +5,95 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private Transform[] levelPart;
     [SerializeField] private Vector3 nextPosition;
 
-    [SerializeField] private float distanceToSpawn;
-    [SerializeField] private float distanceToDelete;
+    [SerializeField] private float distanceToSpawn = 50f;
+    [SerializeField] private float distanceToDelete = 200f;
+
     [SerializeField] private Transform player;
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        if (!GameManager.instance.IsGameplayStarted())
+        // Always keep the correct player reference
+        if (GameManager.instance.IsSinglePlayer())
         {
-            return;
+            if (GameManager.instance.singlePlayerPlayer != null)
+            {
+                player = GameManager.instance.singlePlayerPlayer.transform;
+            }
+        }
+        else
+        {
+            if (GameManager.instance.networkPlayer != null)
+            {
+                player = GameManager.instance.networkPlayer.transform;
+            }
         }
 
-        DeletePlatfrom();
+        if (player == null)
+            return;
+
+        if (!GameManager.instance.IsGameplayStarted())
+            return;
+
         GeneratePlatform();
+        DeletePlatform();
     }
 
     private void GeneratePlatform()
     {
-        while (Vector2.Distance(player.transform.position, nextPosition) < distanceToSpawn)
+        float distance = Vector2.Distance(
+            player.position,
+            nextPosition
+        );
+
+        if (distance < distanceToSpawn)
         {
-            Transform part = levelPart[Random.Range(0, levelPart.Length)];
+            Transform part =
+                levelPart[Random.Range(0, levelPart.Length)];
 
-            Vector2 newPosition = new Vector2(nextPosition.x - part.Find("StartPoint").localPosition.x, 0);
+            Vector2 spawnPosition =
+                new Vector2(
+                    nextPosition.x -
+                    part.Find("StartPoint").localPosition.x,
+                    0f
+                );
 
-            Transform newPart = Instantiate(part, newPosition, transform.rotation, transform);
+            Transform newPart =
+                Instantiate(
+                    part,
+                    spawnPosition,
+                    Quaternion.identity,
+                    transform
+                );
 
-            nextPosition = newPart.Find("EndPoint").position;
+            Transform endPoint =
+                newPart.Find("EndPoint");
+
+            nextPosition = endPoint.position;
         }
     }
 
-    private void DeletePlatfrom()
+    private void DeletePlatform()
     {
-        if(transform.childCount > 0)
-        {
-            Transform partToDelete = transform.GetChild(0);
+        if (transform.childCount <= 0)
+            return;
 
-            if(Vector2.Distance(player.transform.position, partToDelete.transform.position) > distanceToDelete)
-            {
-                Destroy(partToDelete.gameObject);
-            }
+        Transform partToDelete =
+            transform.GetChild(0);
+
+        float distance =
+            Vector2.Distance(
+                player.position,
+                partToDelete.position
+            );
+
+        if (distance > distanceToDelete)
+        {
+            Destroy(partToDelete.gameObject);
         }
+    }
+
+    public void SetPlayer(Transform newPlayer)
+    {
+        player = newPlayer;
     }
 }

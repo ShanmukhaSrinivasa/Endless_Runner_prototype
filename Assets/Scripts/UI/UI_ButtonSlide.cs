@@ -5,6 +5,13 @@ public class UI_ButtonSlide : MonoBehaviour, IPointerDownHandler
 {
     public void OnPointerDown(PointerEventData eventData)
     {
-        GameManager.instance.player.slidingButton();
+        if (GameManager.instance.IsSinglePlayer())
+        {
+            GameManager.instance.singlePlayerPlayer?.slidingButton();
+        }
+        else
+        {
+            GameManager.instance.networkPlayer?.slidingButton();
+        }
     }
 }
