@@ -37,12 +37,28 @@ public class UI_InGame : MonoBehaviour
     {
         if (GameManager.instance.IsSinglePlayer())
         {
+            if (singlePlayer == null)
+            {
+                singlePlayer = GameManager.instance.singlePlayerPlayer;
+
+                if (singlePlayer == null)
+                    return;
+            }
+
             slideIcon.enabled = singlePlayer.slideCooldownCounter < 0;
             heartEmpty.enabled = !singlePlayer.extraLife;
             heartFull.enabled = singlePlayer.extraLife;
         }
         else
         {
+            if (networkPlayer == null)
+            {
+                networkPlayer = GameManager.instance.networkPlayer;
+
+                if (networkPlayer == null)
+                    return;
+            }
+
             slideIcon.enabled = networkPlayer.slideCooldownCounter < 0;
             heartEmpty.enabled = !networkPlayer.extraLife;
             heartFull.enabled = networkPlayer.extraLife;
@@ -51,14 +67,7 @@ public class UI_InGame : MonoBehaviour
         distance = GameManager.instance.distance;
         coins = GameManager.instance.coins;
 
-        if (distance > 0)
-        {
-            distanceText.text = distance.ToString("#,#") + "  m";
-        }
-
-        if (coins > 0)
-        {
-            coinsText.text = GameManager.instance.coins.ToString("#,#");
-        }
+        distanceText.text = distance.ToString("#,#") + " m";
+        coinsText.text = coins.ToString("#,#");
     }
 }
