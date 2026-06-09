@@ -40,33 +40,35 @@ public class LevelGenerator : MonoBehaviour
 
     private void GeneratePlatform()
     {
-        float distance = Vector2.Distance(
-            player.position,
-            nextPosition
-        );
+        float xDistance = nextPosition.x - player.position.x;
 
-        if (distance < distanceToSpawn)
+        Debug.Log("PlayerX = " + player.position.x +" | NextX = " + nextPosition.x +" | Distance = " + xDistance);
+
+        if (xDistance < distanceToSpawn)
         {
-            Transform part =
-                levelPart[Random.Range(0, levelPart.Length)];
+            Transform part =levelPart[Random.Range(0, levelPart.Length)];
 
-            Vector2 spawnPosition =
-                new Vector2(
-                    nextPosition.x -
-                    part.Find("StartPoint").localPosition.x,
-                    0f
-                );
+            Debug.Log("SPAWNING: " + part.name);
 
-            Transform newPart =
-                Instantiate(
-                    part,
-                    spawnPosition,
-                    Quaternion.identity,
-                    transform
-                );
+            Transform startPoint =part.Find("StartPoint");
 
-            Transform endPoint =
-                newPart.Find("EndPoint");
+            if (startPoint == null)
+            {
+                Debug.LogError(part.name + " MISSING STARTPOINT!");
+                return;
+            }
+
+            Vector2 spawnPosition =new Vector2(nextPosition.x -startPoint.localPosition.x,0f);
+
+            Transform newPart =Instantiate(part,spawnPosition,Quaternion.identity,transform);
+
+            Transform endPoint =newPart.Find("EndPoint");
+
+            if (endPoint == null)
+            {
+                Debug.LogError(part.name + " MISSING ENDPOINT!");
+                return;
+            }
 
             nextPosition = endPoint.position;
         }
@@ -74,19 +76,20 @@ public class LevelGenerator : MonoBehaviour
 
     private void DeletePlatform()
     {
-        if (transform.childCount <= 0)
-            return;
+        Transform partToDelete = null;
 
-        Transform partToDelete =
-            transform.GetChild(0);
+        foreach (Transform part in transform)
+        {
+            float distanceBehindPlayer =player.position.x - part.position.x;
 
-        float distance =
-            Vector2.Distance(
-                player.position,
-                partToDelete.position
-            );
+            if (distanceBehindPlayer > distanceToDelete)
+            {
+                partToDelete = part;
+                break;
+            }
+        }
 
-        if (distance > distanceToDelete)
+        if (partToDelete != null)
         {
             Destroy(partToDelete.gameObject);
         }

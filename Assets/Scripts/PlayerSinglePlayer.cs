@@ -102,6 +102,11 @@ public class PlayerSinglePlayer : MonoBehaviour
 
         extraLife = moveSpeed >= speedToSurvive;
 
+        if (transform.position.y < -10f)
+        {
+            GameManager.instance.GameEnded();
+        }
+
         if (Input.GetKeyDown(KeyCode.K))
         {
             knockBack();
@@ -395,13 +400,11 @@ public class PlayerSinglePlayer : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            Debug.Log("SPACE DETECTED");
             jumpButton();
         }
 
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
-            Debug.Log("SHIFT DETECTED");
             slidingButton();
         }
     }

@@ -30,6 +30,7 @@ public class GameManager : MonoBehaviour
     public float score;
 
     public bool gamePlayStarted = false;
+    private bool isGameOver = false;
 
     private void Awake()
     {
@@ -121,9 +122,16 @@ public class GameManager : MonoBehaviour
     {
         gamePlayStarted = true;
 
-        UnlockPlayer();
+        if (IsSinglePlayer())
+        {
+            StartSinglePlayer();
+        }
+        else
+        {
+            StartMultiPlayer();
+        }
 
-        Debug.Log("Gameplay Started");
+        UnlockPlayer();
     }
 
     public void StartGame()
@@ -150,8 +158,6 @@ public class GameManager : MonoBehaviour
 
         Debug.Log("Single Player Systems Started");
 
-        BeginGamePlay();
-
         CinemachineCamera cineCam =FindFirstObjectByType<CinemachineCamera>();
 
         if (cineCam != null)
@@ -163,11 +169,20 @@ public class GameManager : MonoBehaviour
     private void StartMultiPlayer()
     {
         Debug.Log("Multiplayer Systems Started");
+
+        CinemachineCamera cineCam =FindFirstObjectByType<CinemachineCamera>();
+
+        if (cineCam != null && networkPlayer != null)
+        {
+            cineCam.Target.TrackingTarget =networkPlayer.transform;
+
+            Debug.Log("CAMERA FOLLOWING NETWORK PLAYER");
+        }
     }
 
     public void RestartLevel()
     {
-        SceneManager.LoadScene(0);
+        SceneManager.LoadScene("Endless_Runner");
     }
 
     private void Update()
@@ -196,15 +211,30 @@ public class GameManager : MonoBehaviour
 
     public void UnlockPlayer()
     {
+        Debug.Log("UNLOCK PLAYER CALLED");
+        Debug.Log("MODE = " + currentGameMode);
+
         if (IsSinglePlayer())
         {
-            if (singlePlayerPlayer != null)
-                singlePlayerPlayer.playerUnlocked = true;
+            Debug.Log("SINGLE PLAYER BRANCH");
         }
         else
         {
+            Debug.Log("MULTIPLAYER BRANCH");
+
             if (networkPlayer != null)
+            {
+                Debug.Log("PLAYER BEFORE UNLOCK = " + networkPlayer.playerUnlocked);
+
                 networkPlayer.playerUnlocked = true;
+
+                Debug.Log("PLAYER AFTER UNLOCK = " + networkPlayer.playerUnlocked);
+                Debug.Log("NETWORK PLAYER UNLOCKED");
+            }
+            else
+            {
+                Debug.Log("NETWORK PLAYER IS NULL");
+            }
         }
     }
 
@@ -226,6 +256,11 @@ public class GameManager : MonoBehaviour
 
     public void GameEnded()
     {
+        if (isGameOver)
+            return;
+
+        isGameOver = true;
+        Time.timeScale = 0f;
         SaveInfo();
         ui.OpenEndGameUI();
     }
@@ -243,5 +278,10 @@ public class GameManager : MonoBehaviour
     public bool IsGameplayStarted()
     {
         return gamePlayStarted;
+    }
+
+    public bool IsGameOver()
+    {
+        return isGameOver;
     }
 }

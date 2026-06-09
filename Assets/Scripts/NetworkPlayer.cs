@@ -9,6 +9,14 @@ public class NetworkPlayer : NetworkBehaviour
             $"PLAYER SPAWNED | ClientId: {OwnerClientId} | IsOwner: {IsOwner}"
         );
 
+        if (IsOwner)
+        {
+            GameManager.instance.networkPlayer =
+                GetComponent<player>();
+
+            Debug.Log("LOCAL PLAYER ASSIGNED TO GAMEMANAGER");
+        }
+
         if (IsServer)
         {
             Transform[] spawnPoints =

@@ -103,6 +103,11 @@ public class player : NetworkBehaviour
 
         extraLife = moveSpeed >= speedToSurvive;
 
+        if (transform.position.y < -10f)
+        {
+            GameManager.instance.GameEnded();
+        }
+
         if (Input.GetKeyDown(KeyCode.K))
         {
             knockBack();
@@ -121,6 +126,11 @@ public class player : NetworkBehaviour
         if (IsKnocked)
         {
             return;
+        }
+
+        if (IsOwner)
+        {
+            Debug.Log("Unlocked = " + playerUnlocked);
         }
 
         if (playerUnlocked)
@@ -146,6 +156,14 @@ public class player : NetworkBehaviour
         if (IsOwner)
         {
             GameManager.instance.networkPlayer = this;
+        }
+
+        if (GameManager.instance != null &&
+            GameManager.instance.IsGameplayStarted())
+        {
+            playerUnlocked = true;
+
+            Debug.Log("Late Spawn Unlock");
         }
     }
 

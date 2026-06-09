@@ -9,12 +9,11 @@ using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 
-public class MultiplayerLobbyManager : MonoBehaviour
+public class MultiplayerLobbyManager : NetworkBehaviour
 {
     public static MultiplayerLobbyManager Instance;
 
     [Header("UI")]
-    [SerializeField] private TextMeshProUGUI roomCodeText;
     [SerializeField] private TMP_InputField roomCodeInput;
 
     [Header("Relay")]
@@ -30,22 +29,50 @@ public class MultiplayerLobbyManager : MonoBehaviour
 
     private void Start()
     {
-        if (GameManager.instance == null)
-            return;
+        Debug.Log("LobbyManager Start");
 
-        if (!GameManager.instance.IsMultiPlayer())
-            return;
+        Debug.Log("NetworkManager = " + NetworkManager.Singleton);
 
         if (NetworkManager.Singleton != null)
         {
+            Debug.Log("REGISTERING CALLBACKS");
+
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
         }
     }
 
+    private void Update()
+    {
+        if (!NetworkManager.Singleton)
+            return;
+
+        if (!NetworkManager.Singleton.IsHost)
+            return;
+
+        int playerCount =
+            NetworkManager.Singleton.ConnectedClients.Count;
+
+        Debug.Log("LIVE COUNT = " + playerCount);
+
+        GameManager.instance.ui.UpdatePlayerCount(playerCount);
+    }
+
     private void OnClientConnected(ulong clientId)
     {
+        Debug.Log("CLIENT CONNECTED CALLBACK FIRED");
         Debug.Log("CLIENT CONNECTED: " + clientId);
+
+        int playerCount =
+            NetworkManager.Singleton.ConnectedClients.Count;
+
+        Debug.Log("CONNECTED CLIENTS = " + playerCount);
+
+        if (GameManager.instance != null &&
+            GameManager.instance.ui != null)
+        {
+            GameManager.instance.ui.UpdatePlayerCount(playerCount);
+        }
     }
 
     private void OnClientDisconnected(ulong clientId)
@@ -55,6 +82,8 @@ public class MultiplayerLobbyManager : MonoBehaviour
 
     public async void CreateRoom()
     {
+        GameManager.instance.currentGameMode =GameMode.Multiplayer;
+
         try
         {
             await CreateRelay();
@@ -68,19 +97,16 @@ public class MultiplayerLobbyManager : MonoBehaviour
                     }
                 }
             };
-            currentLobby = await LobbyService.Instance.CreateLobbyAsync("PixelDashRoom", 5, options);
-
+            currentLobby = await LobbyService.Instance.CreateLobbyAsync("PixelDashRoom",5,options);
 
             Debug.Log("Lobby created!");
-            Debug.Log("Lobby Code: " +  currentLobby.LobbyCode);
-
-            if (roomCodeText != null)
-            {
-                roomCodeText.text = "Room Code: " + currentLobby.LobbyCode;
-            }
+            Debug.Log("Lobby Code: " + currentLobby.LobbyCode);
 
             ConfigureHostRelay();
             StartHost();
+
+            GameManager.instance.ui.OpenMultiplayerLobby();
+            GameManager.instance.ui.SetLobbyRoomCode(currentLobby.LobbyCode);
         }
         catch(System.Exception e)
         {
@@ -90,6 +116,8 @@ public class MultiplayerLobbyManager : MonoBehaviour
 
     public async void JoinRoom()
     {
+        GameManager.instance.currentGameMode =GameMode.Multiplayer;
+
         try
         {
             string roomCode = roomCodeInput.text;
@@ -97,6 +125,10 @@ public class MultiplayerLobbyManager : MonoBehaviour
             Debug.Log("Trying to join: " + roomCode);
 
             currentLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(roomCode);
+
+            GameManager.instance.ui.OpenMultiplayerLobby();
+
+            GameManager.instance.ui.SetLobbyRoomCode(currentLobby.LobbyCode);
 
             if (currentLobby.Data.ContainsKey("RelayCode"))
             {
@@ -201,12 +233,34 @@ public class MultiplayerLobbyManager : MonoBehaviour
         return currentLobby.LobbyCode;
     }
 
-    private void OnDestroy()
+    public override void OnDestroy()
     {
         if (NetworkManager.Singleton != null)
         {
             NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
         }
+
+        base.OnDestroy();
+    }
+
+    [Rpc(SendTo.Server)]
+    public void StartMatchRpc()
+    {
+        Debug.Log("HOST REQUESTED MATCH START");
+
+        StartMatchClientRpc();
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void StartMatchClientRpc()
+    {
+        Debug.Log("MATCH STARTED ON CLIENT");
+
+        GameManager.instance.currentGameMode =GameMode.Multiplayer;
+
+        GameManager.instance.ui.OpenInGameUI();
+
+        GameManager.instance.BeginGamePlay();
     }
 }
