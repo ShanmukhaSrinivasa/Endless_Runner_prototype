@@ -26,9 +26,21 @@ public class MultiplayerLobbyManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+    }
 
-        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+    private void Start()
+    {
+        if (GameManager.instance == null)
+            return;
+
+        if (!GameManager.instance.IsMultiPlayer())
+            return;
+
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+        }
     }
 
     private void OnClientConnected(ulong clientId)
@@ -187,5 +199,14 @@ public class MultiplayerLobbyManager : MonoBehaviour
             return "";
 
         return currentLobby.LobbyCode;
+    }
+
+    private void OnDestroy()
+    {
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+        }
     }
 }
