@@ -99,6 +99,11 @@ public class UI_Main : MonoBehaviour
         }
     }
 
+    public void QuitButton()
+    {
+        Application.Quit();
+    }
+
     public void RestartGameButton() => GameManager.instance.RestartLevel(); 
 
     public void OpenEndGameUI()
