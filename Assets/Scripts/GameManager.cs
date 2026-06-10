@@ -150,10 +150,9 @@ public class GameManager : MonoBehaviour
     {
         if (singlePlayerPlayer == null)
         {
-            singlePlayerPlayer = Instantiate(
-                singlePlayerPrefab,
-                singlePlayerSpawnPoint.position,
-                Quaternion.identity);
+            singlePlayerPlayer = Instantiate(singlePlayerPrefab,singlePlayerSpawnPoint.position,Quaternion.identity);
+
+            singlePlayerPlayer.GetComponent<SpriteRenderer>().color = playerColor;
         }
 
         Debug.Log("Single Player Systems Started");
@@ -224,11 +223,11 @@ public class GameManager : MonoBehaviour
 
             if (networkPlayer != null)
             {
-                Debug.Log("PLAYER BEFORE UNLOCK = " + networkPlayer.playerUnlocked);
+                //Debug.Log("PLAYER BEFORE UNLOCK = " + networkPlayer.playerUnlocked);
 
                 networkPlayer.playerUnlocked = true;
 
-                Debug.Log("PLAYER AFTER UNLOCK = " + networkPlayer.playerUnlocked);
+                //Debug.Log("PLAYER AFTER UNLOCK = " + networkPlayer.playerUnlocked);
                 Debug.Log("NETWORK PLAYER UNLOCKED");
             }
             else
@@ -260,9 +259,15 @@ public class GameManager : MonoBehaviour
             return;
 
         isGameOver = true;
+
         Time.timeScale = 0f;
+
         SaveInfo();
-        ui.OpenEndGameUI();
+
+        if (IsSinglePlayer())
+        {
+            ui.OpenEndGameUI();
+        }
     }
 
     public bool IsSinglePlayer()
@@ -283,5 +288,31 @@ public class GameManager : MonoBehaviour
     public bool IsGameOver()
     {
         return isGameOver;
+    }
+
+    public bool IsCurrentPlayerColor(Color color)
+    {
+        return playerColor == color;
+    }
+
+    public bool IsCurrentPlatformColor(Color color)
+    {
+        return platformColor == color;
+    }
+
+    public int GetCurrentColorPrice()
+    {
+        return PlayerPrefs.GetInt("CurrentColorPrice",200);
+    }
+
+    public void IncreaseColorPrice()
+    {
+        int currentPrice = GetCurrentColorPrice();
+
+        currentPrice =Mathf.RoundToInt(currentPrice * 1.5f);
+
+        PlayerPrefs.SetInt("CurrentColorPrice",currentPrice);
+
+        PlayerPrefs.Save();
     }
 }

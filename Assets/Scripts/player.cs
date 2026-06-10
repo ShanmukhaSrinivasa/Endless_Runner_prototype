@@ -8,9 +8,11 @@ public class player : NetworkBehaviour
     private Rigidbody2D rb;
     private Animator anim;
     private SpriteRenderer sr;
+    private NetworkVariable<Color> networkPlayerColor = new NetworkVariable<Color>(Color.white,NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Owner);
 
     [Header("Death Info")]
     private bool isDead;
+    private bool deathReported;
     [HideInInspector] public bool playerUnlocked;
     [HideInInspector] public bool extraLife;
 
@@ -18,8 +20,6 @@ public class player : NetworkBehaviour
     [SerializeField] private ParticleSystem dustFX;
     [SerializeField] private ParticleSystem bloodSplatterFX;
     
-
-
     [Header("Knockback Info")]
     [SerializeField] private Vector2 knockBackDir;
     private bool IsKnocked;
@@ -73,6 +73,9 @@ public class player : NetworkBehaviour
     private bool canGrabLedge = true;
     private bool canClimb;
 
+    [SerializeField] private Color hostColor;
+    [SerializeField] private Color clientColor;
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -80,6 +83,8 @@ public class player : NetworkBehaviour
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         sr = GetComponent<SpriteRenderer>();
+
+        networkPlayerColor.OnValueChanged += OnColorChanged;
 
         speedMilestone = milestoneIncreaser;
         defaultSpeed = moveSpeed;
@@ -103,9 +108,9 @@ public class player : NetworkBehaviour
 
         extraLife = moveSpeed >= speedToSurvive;
 
-        if (transform.position.y < -10f)
+        if (transform.position.y < -10f && !isDead)
         {
-            GameManager.instance.GameEnded();
+            StartCoroutine(Death());
         }
 
         if (Input.GetKeyDown(KeyCode.K))
@@ -151,6 +156,13 @@ public class player : NetworkBehaviour
         checkInput();
     }
 
+    private void OnColorChanged(Color oldColor,Color newColor)
+    {
+        if (sr != null)
+        {
+            sr.color = newColor;
+        }
+    }
     public override void OnNetworkSpawn()
     {
         if (IsOwner)
@@ -158,12 +170,13 @@ public class player : NetworkBehaviour
             GameManager.instance.networkPlayer = this;
         }
 
-        if (GameManager.instance != null &&
-            GameManager.instance.IsGameplayStarted())
+        if (OwnerClientId == 0)
         {
-            playerUnlocked = true;
-
-            Debug.Log("Late Spawn Unlock");
+            sr.color = hostColor;
+        }
+        else
+        {
+            sr.color = clientColor;
         }
     }
 
@@ -211,7 +224,27 @@ public class player : NetworkBehaviour
 
         rb.linearVelocity = new Vector2(0, 0);
 
-        GameManager.instance.GameEnded();
+        Debug.Log("DEATH CALLED | Owner = " +OwnerClientId +" | IsOwner = " +IsOwner);
+
+        HandleDeath();
+    }
+
+    private void HandleDeath()
+    {
+        if (deathReported)
+            return;
+
+        deathReported = true;
+
+        if (GameManager.instance.IsSinglePlayer())
+        {
+            GameManager.instance.GameEnded();
+            return;
+        }
+
+        NetworkObject netObj = GetComponent<NetworkObject>();
+
+        MultiplayerMatchManager.Instance.PlayerDiedServerRpc(netObj.OwnerClientId);
     }
 
     private IEnumerator Invincibility()

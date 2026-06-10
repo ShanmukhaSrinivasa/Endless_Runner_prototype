@@ -81,7 +81,7 @@ public class UI_Shop : MonoBehaviour
         for (int i = 0; i < colorsToSell.Length; i++)
         {
             Color color = colorsToSell[i].color;
-            int price = colorsToSell[i].price;
+            int price = GameManager.instance.GetCurrentColorPrice();
             int colorIndex = i; // Capture index for the listener
 
             GameObject newButton = Instantiate(buttonPrefab, parent);
@@ -93,9 +93,22 @@ public class UI_Shop : MonoBehaviour
             // Check if the color is owned
             if (PlayerPrefs.GetInt(ownershipKey, 0) == 1)
             {
-                // If owned, disable the button and show "Owned"
-                newButton.GetComponent<Button>().interactable = false;
-                newButton.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = "Owned";
+                TextMeshProUGUI buttonText = newButton.transform.GetChild(1).GetComponent<TextMeshProUGUI>();
+
+                bool isEquipped = false;
+
+                if (colorType == ColorType.playerColor)
+                {
+                    isEquipped = GameManager.instance.IsCurrentPlayerColor(color);
+                }
+                else
+                {
+                    isEquipped = GameManager.instance.IsCurrentPlatformColor(color);
+                }
+
+                buttonText.text = isEquipped? "Equipped": "Equip";
+
+                newButton.GetComponent<Button>().onClick.AddListener(() => EquipOwnedColor(color,colorIndex,colorType));
             }
             else
             {
@@ -146,6 +159,7 @@ public class UI_Shop : MonoBehaviour
             // Save the ownership status with the unique key
             string ownershipKey = $"{colorType}_Owned_{colorIndex}";
             PlayerPrefs.SetInt(ownershipKey, 1);
+            GameManager.instance.IncreaseColorPrice();
             PlayerPrefs.Save();
 
             StartCoroutine(NotifyText("Purchase Successful!", 2));
@@ -192,5 +206,33 @@ public class UI_Shop : MonoBehaviour
         yield return new WaitForSeconds(seconds);
 
         notifyText.text = "SHOP";
+    }
+
+    public void EquipOwnedColor(Color color,int colorIndex,ColorType colorType)
+    {
+        AudioManager.instance.PlaySFX(3);
+
+        if (colorType == ColorType.platformColor)
+        {
+            GameManager.instance.platformColor = color;
+            GameManager.instance.SavePlatformColor(color);
+            platformDisplay.color = color;
+        }
+        else
+        {
+            GameManager.instance.playerColor = color;
+            GameManager.instance.SavePlayerColor(color);
+
+            playerDisplay.color = color;
+
+            if (GameManager.instance.singlePlayerPlayer != null)
+            {
+                GameManager.instance.singlePlayerPlayer.GetComponent<SpriteRenderer>().color = color;
+            }
+        }
+
+        RefreshShopUI();
+
+        StartCoroutine(NotifyText("Color Equipped!",2));
     }
 }

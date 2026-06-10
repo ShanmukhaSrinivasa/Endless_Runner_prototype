@@ -2,6 +2,7 @@ using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class UI_Main : MonoBehaviour
 {
@@ -11,7 +12,9 @@ public class UI_Main : MonoBehaviour
     [SerializeField] private GameObject mainMenu;
     [SerializeField] private GameObject endGame;
     [SerializeField] private GameObject multiplayerPanel;
+    [SerializeField] private GameObject endGameMultiplayer;
     [SerializeField] private GameObject inGameUI;
+    [SerializeField] private GameObject loginUI;
     [Space]
 
     [Header("VFX")]
@@ -34,12 +37,27 @@ public class UI_Main : MonoBehaviour
     [SerializeField] private TextMeshProUGUI statusText;
     [SerializeField] private TextMeshProUGUI lobbyRoomCodeText;
 
+    [SerializeField] private TextMeshProUGUI hostNameText;
+    [SerializeField] private TextMeshProUGUI guestNameText;
+
     [SerializeField] private Button startMatchButton;
+
+    [SerializeField] private TextMeshProUGUI resultText;
+    [SerializeField] private TextMeshProUGUI winnerNameText;
+    [SerializeField] private TextMeshProUGUI multiplayerDistanceText;
+    [SerializeField] private TextMeshProUGUI resultTitleText;
+
+    [SerializeField] private TextMeshProUGUI hostReadyText;
+    [SerializeField] private TextMeshProUGUI guestReadyText;
+
+    [Header("Multiplayer Stats info")]
+    [SerializeField] private TextMeshProUGUI profileUserNameText;
+    [SerializeField] private TextMeshProUGUI winsText;
+    [SerializeField] private TextMeshProUGUI lossesText;
+    [SerializeField] private TextMeshProUGUI bestDistanceText;
 
     private void Start()
     {
-        SwitchMenuTo(mainMenu);
-
         for (int i = 0; i < sliders.Length; i++)
         {
             sliders[i].SetupSlider();
@@ -48,6 +66,7 @@ public class UI_Main : MonoBehaviour
         lastScoreText.text = "Last Score:  " + PlayerPrefs.GetFloat("LastScore").ToString("#,#");
         highScoreText.text = "High Score:  " + PlayerPrefs.GetFloat("HighScore").ToString("#,#");
 
+        UpdateProfile();
     }
 
     public void SwitchMenuTo(GameObject uiMenu)
@@ -193,20 +212,13 @@ public class UI_Main : MonoBehaviour
 
         if (count >= 2)
         {
-            statusText.text = "Ready To Start";
-
-            if (NetworkManager.Singleton != null &&
-                NetworkManager.Singleton.IsHost)
-            {
-                startMatchButton.interactable = true;
-            }
+            statusText.text = "Waiting For Ready...";
         }
         else
         {
             statusText.text = "Waiting for players...";
 
-            if (NetworkManager.Singleton != null &&
-                NetworkManager.Singleton.IsHost)
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
             {
                 startMatchButton.interactable = false;
             }
@@ -245,4 +257,69 @@ public class UI_Main : MonoBehaviour
             inGameUI.SetActive(true);
         }
     }
+
+    public void UpdatePlayerNames(string hostName,string guestName)
+    {
+        hostNameText.text = "Host: " + hostName;
+
+        if (string.IsNullOrEmpty(guestName))
+        {
+            guestNameText.text = "Guest: Waiting...";
+        }
+        else
+        {
+            guestNameText.text = "Guest: " + guestName;
+        }
+    }
+
+    public void OpenMultiplayerResultUI(bool isWinner,string winnerName,float distance)
+    {
+        SwitchMenuTo(endGameMultiplayer);
+
+        if (isWinner)
+        {
+            resultTitleText.text = "VICTORY";
+            resultText.text = "WINNER";
+            winnerNameText.text = "You Won!";
+        }
+        else
+        {
+            resultTitleText.text = "GAME OVER";
+            resultText.text = "ELIMINATED";
+            winnerNameText.text = "Winner: " + winnerName;
+        }
+
+        multiplayerDistanceText.text ="Distance: " +distance.ToString("#,#") +" m";
+    }
+    public void ReturnToMainMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("Endless_Runner");
+    }
+
+    public void UpdateReadyStatus(bool hostReady,bool guestReady)
+    {
+        hostReadyText.text =hostReady? "Host Ready: YES": "Host Ready: NO";
+
+        guestReadyText.text =guestReady? "Guest Ready: YES": "Guest Ready: NO";
+
+        bool canStart =hostReady &&guestReady;
+
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
+        {
+            startMatchButton.interactable = canStart;
+        }
+    }
+
+    public void UpdateProfile()
+    {
+        profileUserNameText.text = LoginManager.Instance.GetPlayerName();
+
+        winsText.text = "Wins: " + PlayerStats.Wins;
+
+        lossesText.text = "Losses: " + PlayerStats.Losses;
+
+        bestDistanceText.text = "Best Distance: " + Mathf.RoundToInt(PlayerStats.BestDistance) + "m";
+    }
+
 }

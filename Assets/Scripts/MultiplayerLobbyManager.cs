@@ -7,6 +7,7 @@ using Unity.Services.Relay.Models;
 using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
+using Unity.Services.Authentication;
 using UnityEngine;
 
 public class MultiplayerLobbyManager : NetworkBehaviour
@@ -21,6 +22,14 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
     private Allocation hostAllocation;
     private Lobby currentLobby;
+
+    private float lobbyRefreshTimer;
+    private const float LOBBY_REFRESH_INTERVAL = 2f;
+
+    public string HostPlayerName { get; private set; }
+    public string GuestPlayerName { get; private set; }
+
+    private bool localReady;
 
     private void Awake()
     {
@@ -44,18 +53,17 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
     private void Update()
     {
-        if (!NetworkManager.Singleton)
+        if (currentLobby == null)
             return;
 
-        if (!NetworkManager.Singleton.IsHost)
-            return;
+        lobbyRefreshTimer -= Time.deltaTime;
 
-        int playerCount =
-            NetworkManager.Singleton.ConnectedClients.Count;
+        if (lobbyRefreshTimer <= 0f)
+        {
+            lobbyRefreshTimer = LOBBY_REFRESH_INTERVAL;
 
-        Debug.Log("LIVE COUNT = " + playerCount);
-
-        GameManager.instance.ui.UpdatePlayerCount(playerCount);
+            RefreshLobby();
+        }
     }
 
     private void OnClientConnected(ulong clientId)
@@ -63,13 +71,11 @@ public class MultiplayerLobbyManager : NetworkBehaviour
         Debug.Log("CLIENT CONNECTED CALLBACK FIRED");
         Debug.Log("CLIENT CONNECTED: " + clientId);
 
-        int playerCount =
-            NetworkManager.Singleton.ConnectedClients.Count;
+        int playerCount = NetworkManager.Singleton.ConnectedClients.Count;
 
         Debug.Log("CONNECTED CLIENTS = " + playerCount);
 
-        if (GameManager.instance != null &&
-            GameManager.instance.ui != null)
+        if (GameManager.instance != null && GameManager.instance.ui != null)
         {
             GameManager.instance.ui.UpdatePlayerCount(playerCount);
         }
@@ -94,10 +100,24 @@ public class MultiplayerLobbyManager : NetworkBehaviour
                 {
                     {
                         "RelayCode", new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode)
+                    },
+
+                    {
+                        "HostName",new DataObject(DataObject.VisibilityOptions.Public,LoginManager.Instance.GetPlayerName())
                     }
                 }
             };
             currentLobby = await LobbyService.Instance.CreateLobbyAsync("PixelDashRoom",5,options);
+
+            await LobbyService.Instance.UpdatePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId,new UpdatePlayerOptions
+            {
+                Data = new Dictionary<string, PlayerDataObject>
+                {
+                    {
+                        "Ready",new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member,"False")
+                    }
+                }
+            });
 
             Debug.Log("Lobby created!");
             Debug.Log("Lobby Code: " + currentLobby.LobbyCode);
@@ -125,6 +145,20 @@ public class MultiplayerLobbyManager : NetworkBehaviour
             Debug.Log("Trying to join: " + roomCode);
 
             currentLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(roomCode);
+
+            await LobbyService.Instance.UpdatePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId,new UpdatePlayerOptions
+            {
+                Data = new Dictionary<string, PlayerDataObject>
+                {
+                    {
+                        "PlayerName",new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member,LoginManager.Instance.GetPlayerName())
+                    },
+
+                    {
+                        "Ready",new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member,"False")
+                    }
+                }
+            });
 
             GameManager.instance.ui.OpenMultiplayerLobby();
 
@@ -262,5 +296,114 @@ public class MultiplayerLobbyManager : NetworkBehaviour
         GameManager.instance.ui.OpenInGameUI();
 
         GameManager.instance.BeginGamePlay();
+    }
+
+    private async void RefreshLobby()
+    {
+        try
+        {
+            currentLobby =await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
+
+            GameManager.instance.ui.UpdatePlayerCount(currentLobby.Players.Count);
+
+            HostPlayerName = "Host";
+
+            if (currentLobby.Data.ContainsKey("HostName"))
+            {
+                HostPlayerName = currentLobby.Data["HostName"].Value;
+            }
+
+            GuestPlayerName = "";
+
+            if (currentLobby.Players.Count > 1)
+            {
+                Player guestPlayer = currentLobby.Players[1];
+
+                if (guestPlayer.Data != null && guestPlayer.Data.ContainsKey("PlayerName"))
+                {
+                    GuestPlayerName = guestPlayer.Data["PlayerName"].Value;
+                }
+            }
+
+            GameManager.instance.ui.UpdatePlayerNames(HostPlayerName,GuestPlayerName);
+            bool hostReady = false;
+            bool guestReady = false;
+
+            if (currentLobby.Players.Count > 0)
+            {
+                Player hostPlayer = currentLobby.Players[0];
+
+                if (hostPlayer.Data != null && hostPlayer.Data.ContainsKey("Ready"))
+                {
+                    bool.TryParse(hostPlayer.Data["Ready"].Value,out hostReady);
+                }
+            }
+
+            if (currentLobby.Players.Count > 1)
+            {
+                Player guestPlayer = currentLobby.Players[1];
+
+                if (guestPlayer.Data != null && guestPlayer.Data.ContainsKey("Ready"))
+                {
+                    bool.TryParse(guestPlayer.Data["Ready"].Value,out guestReady);
+                }
+            }
+
+            GameManager.instance.ui.UpdatePlayerNames(HostPlayerName,GuestPlayerName);
+
+            GameManager.instance.ui.UpdateReadyStatus(hostReady,guestReady);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("Lobby Refresh Failed: " + e.Message);
+        }
+    }
+
+    public async void LeaveLobby()
+    {
+        try
+        {
+            if (currentLobby != null)
+            {
+                await LobbyService.Instance.RemovePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId);
+            }
+
+            currentLobby = null;
+
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+
+            Time.timeScale = 1f;
+
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Endless_Runner");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
+    public async void ToggleReady()
+    {
+        localReady = !localReady;
+
+        try
+        {
+            await LobbyService.Instance.UpdatePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId,new UpdatePlayerOptions
+                {
+                    Data = new Dictionary<string, PlayerDataObject>
+                    {
+                        {
+                            "Ready",new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member,localReady.ToString())
+                        }
+                    }
+                });
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError(e);
+        }
     }
 }

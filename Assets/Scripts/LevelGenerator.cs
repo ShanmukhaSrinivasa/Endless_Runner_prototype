@@ -42,13 +42,9 @@ public class LevelGenerator : MonoBehaviour
     {
         float xDistance = nextPosition.x - player.position.x;
 
-        Debug.Log("PlayerX = " + player.position.x +" | NextX = " + nextPosition.x +" | Distance = " + xDistance);
-
         if (xDistance < distanceToSpawn)
         {
             Transform part =levelPart[Random.Range(0, levelPart.Length)];
-
-            Debug.Log("SPAWNING: " + part.name);
 
             Transform startPoint =part.Find("StartPoint");
 
