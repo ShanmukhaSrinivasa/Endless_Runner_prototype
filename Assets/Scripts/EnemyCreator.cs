@@ -8,6 +8,11 @@ public class EnemyCreator : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        if (GameManager.instance.IsMultiPlayer())
+        {
+            return;
+        }
+
         if (collision.GetComponent<player>() != null)
         {
             if (Random.Range(0, 100) < chanceToRespawn)

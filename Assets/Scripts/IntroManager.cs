@@ -69,4 +69,9 @@ public class IntroManager : MonoBehaviour
             sceneLoadOperation.allowSceneActivation = true;
         }
     }
+
+    private void OnDestroy()
+    {
+        videoPlayer.loopPointReached -= OnVideoFinished;
+    }
 }

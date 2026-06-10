@@ -6,6 +6,11 @@ public class trap : MonoBehaviour
 
     protected virtual void Start()
     {
+        if (GameManager.instance.IsMultiPlayer())
+        {
+            return;
+        }
+
         bool canSpawn = chanceToSpawn >= Random.Range(0, 100);
 
         if (!canSpawn)

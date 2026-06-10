@@ -22,6 +22,11 @@ public class AudioManager : MonoBehaviour
 
     private void Update()
     {
+        if (bgm == null || bgm.Length == 0)
+        {
+            return;
+        }
+
         if (!bgm[bgmIndex].isPlaying)
         {
             PlayRandomBGM();

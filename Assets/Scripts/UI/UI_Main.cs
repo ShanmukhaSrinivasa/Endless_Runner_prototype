@@ -62,6 +62,7 @@ public class UI_Main : MonoBehaviour
     [SerializeField] private TextMeshProUGUI matchmakingText;
     [SerializeField] private TextMeshProUGUI lobbyTitleText;
     [SerializeField] private GameObject readyButton;
+    [SerializeField] private Button pauseButton;
 
     private void Start()
     {
@@ -231,6 +232,7 @@ public class UI_Main : MonoBehaviour
             if (MultiplayerLobbyManager.Instance != null && MultiplayerLobbyManager.Instance.IsQuickMatch)
             {
                 statusText.text = "Opponent Found!";
+                matchmakingText.text = "Opponent Found!";
             }
             else
             {
@@ -278,6 +280,11 @@ public class UI_Main : MonoBehaviour
         if (inGameUI != null)
         {
             inGameUI.SetActive(true);
+        }
+
+        if (pauseButton != null)
+        {
+            pauseButton.gameObject.SetActive(GameManager.instance.IsSinglePlayer());
         }
     }
 

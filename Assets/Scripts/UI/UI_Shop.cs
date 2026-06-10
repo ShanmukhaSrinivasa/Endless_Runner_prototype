@@ -225,9 +225,19 @@ public class UI_Shop : MonoBehaviour
 
             playerDisplay.color = color;
 
-            if (GameManager.instance.singlePlayerPlayer != null)
+            if (GameManager.instance.IsSinglePlayer())
             {
-                GameManager.instance.singlePlayerPlayer.GetComponent<SpriteRenderer>().color = color;
+                if (GameManager.instance.singlePlayerPlayer != null)
+                {
+                    GameManager.instance.singlePlayerPlayer.GetComponent<SpriteRenderer>().color = color;
+                }
+            }
+            else
+            {
+                if (GameManager.instance.networkPlayer != null)
+                {
+                    GameManager.instance.networkPlayer.GetComponent<SpriteRenderer>().color = color;
+                }
             }
         }
 

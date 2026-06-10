@@ -1837,7 +1837,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1707720969}
         m_TargetAssemblyTypeName: UI_Main, Assembly-CSharp
-        m_MethodName: gamePauseButton
+        m_MethodName: GamePauseButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2120,7 +2120,7 @@ Transform:
   m_GameObject: {fileID: 167514123}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -20, y: -0.5, z: 0}
+  m_LocalPosition: {x: -19, y: -0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2517,8 +2517,6 @@ Transform:
   m_Children:
   - {fileID: 321705288}
   - {fileID: 167514124}
-  - {fileID: 1733098646}
-  - {fileID: 1931338676}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &178703590
@@ -24964,7 +24962,7 @@ MonoBehaviour:
   RainSoundLight: {fileID: 8300000, guid: c980eda1ec9b9ff4b930005976b00f41, type: 3}
   RainSoundMedium: {fileID: 8300000, guid: 3359e9d10af08ca46ae396298dbd1ed9, type: 3}
   RainSoundHeavy: {fileID: 8300000, guid: db1471092e49b7445bfbd374a17ea61a, type: 3}
-  RainSoundAudioMixer: {fileID: 0}
+  RainSoundAudioMixer: {fileID: 5756888031444685256, guid: 5bd56fcfdb8686f4cacac9bf16f9b0aa, type: 2}
   RainIntensity: 0
   RainFallParticleSystem: {fileID: 953650270}
   RainExplosionParticleSystem: {fileID: 953618230}
@@ -33361,6 +33359,8 @@ MonoBehaviour:
   readyContainer: {fileID: 113259458}
   matchmakingText: {fileID: 1930511000}
   lobbyTitleText: {fileID: 784581388}
+  readyButton: {fileID: 1208291889}
+  pauseButton: {fileID: 511827087}
 --- !u!1 &1725441059
 GameObject:
   m_ObjectHideFlags: 0
@@ -33498,37 +33498,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1725441059}
   m_CullTransparentMesh: 1
---- !u!1 &1733098645
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1733098646}
-  m_Layer: 0
-  m_Name: PlayerSpawnPoint2
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1733098646
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1733098645}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -16, y: -0.5, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 176093772}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1736468429
 GameObject:
   m_ObjectHideFlags: 0
@@ -35024,37 +34993,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1930510998}
   m_CullTransparentMesh: 1
---- !u!1 &1931338675
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1931338676}
-  m_Layer: 0
-  m_Name: PlayerSpawnPoint3
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1931338676
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1931338675}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -14, y: -0.5, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 176093772}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1932214353
 GameObject:
   m_ObjectHideFlags: 0

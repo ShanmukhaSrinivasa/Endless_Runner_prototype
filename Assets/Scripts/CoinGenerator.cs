@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class CoinGenerator : MonoBehaviour
@@ -25,6 +24,8 @@ public class CoinGenerator : MonoBehaviour
         {
             if (MultiplayerMatchManager.Instance == null)
             {
+                Debug.LogWarning("MultiplayerMatchManager not found!");
+
                 return;
             }
 
@@ -36,7 +37,7 @@ public class CoinGenerator : MonoBehaviour
         }
         else
         {
-            amountOfCoins = Random.Range(minCoins,maxCoins);
+            amountOfCoins = Random.Range(minCoins,maxCoins + 1);
         }
 
         int additionalOffset = amountOfCoins / 2;
