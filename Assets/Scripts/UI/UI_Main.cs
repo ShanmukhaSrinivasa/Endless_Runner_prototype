@@ -61,6 +61,7 @@ public class UI_Main : MonoBehaviour
     [SerializeField] private GameObject readyContainer;
     [SerializeField] private TextMeshProUGUI matchmakingText;
     [SerializeField] private TextMeshProUGUI lobbyTitleText;
+    [SerializeField] private GameObject readyButton;
 
     private void Start()
     {
@@ -227,7 +228,14 @@ public class UI_Main : MonoBehaviour
 
         if (count >= 2)
         {
-            statusText.text = "Waiting For Ready...";
+            if (MultiplayerLobbyManager.Instance != null && MultiplayerLobbyManager.Instance.IsQuickMatch)
+            {
+                statusText.text = "Opponent Found!";
+            }
+            else
+            {
+                statusText.text = "Waiting For Ready...";
+            }
         }
         else
         {
@@ -356,6 +364,11 @@ public class UI_Main : MonoBehaviour
     {
         roomCodeContainer.SetActive(!isQuickMatch);
         readyContainer.SetActive(!isQuickMatch);
+
+        if (readyButton != null)
+        {
+            readyButton.SetActive(!isQuickMatch);
+        }
 
         if (isQuickMatch)
         {

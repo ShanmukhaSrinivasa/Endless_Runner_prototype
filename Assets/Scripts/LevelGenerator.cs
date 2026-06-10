@@ -49,6 +49,11 @@ public class LevelGenerator : MonoBehaviour
 
             if (GameManager.instance.IsMultiPlayer())
             {
+                if (MultiplayerMatchManager.Instance == null)
+                {
+                    return;
+                }
+
                 int seed = MultiplayerMatchManager.Instance.GetWorldSeed();
 
                 chunkIndex = Mathf.Abs(seed +generatedChunkCount * 7919) %levelPart.Length;

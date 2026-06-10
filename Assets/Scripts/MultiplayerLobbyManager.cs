@@ -351,7 +351,7 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
             GameManager.instance.ui.UpdatePlayerNames(HostPlayerName,GuestPlayerName);
 
-            if (IsQuickMatch && currentLobby.Players.Count >= 2)
+            if (IsQuickMatch && currentLobby.Players.Count >= 2 && !quickMatchCountdownStarted)
             {
                 if (NetworkManager.Singleton.IsHost)
                 {
@@ -489,6 +489,8 @@ public class MultiplayerLobbyManager : NetworkBehaviour
             ConfigureHostRelay();
             StartHost();
 
+            GameManager.instance.ui.CloseSearchingPanel();
+
             GameManager.instance.ui.OpenMultiplayerLobby();
 
             GameManager.instance.ui.ConfigureLobbyUI(true);
@@ -572,7 +574,6 @@ public class MultiplayerLobbyManager : NetworkBehaviour
             Debug.Log("No Public Lobby Found");
 
             CreatePublicRoom();
-            GameManager.instance.ui.CloseSearchingPanel();
         }
         catch (System.Exception e)
         {
