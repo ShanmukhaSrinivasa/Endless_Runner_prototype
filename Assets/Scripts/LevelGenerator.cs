@@ -9,6 +9,7 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private float distanceToDelete = 200f;
 
     [SerializeField] private Transform player;
+    private int generatedChunkCount;
 
     private void Update()
     {
@@ -44,7 +45,22 @@ public class LevelGenerator : MonoBehaviour
 
         if (xDistance < distanceToSpawn)
         {
-            Transform part =levelPart[Random.Range(0, levelPart.Length)];
+            int chunkIndex;
+
+            if (GameManager.instance.IsMultiPlayer())
+            {
+                int seed = MultiplayerMatchManager.Instance.GetWorldSeed();
+
+                chunkIndex = Mathf.Abs(seed +generatedChunkCount * 7919) %levelPart.Length;
+            }
+            else
+            {
+                chunkIndex =Random.Range(0,levelPart.Length);
+            }
+
+            Transform part = levelPart[chunkIndex];
+
+            generatedChunkCount++;
 
             Transform startPoint =part.Find("StartPoint");
 
@@ -95,4 +111,5 @@ public class LevelGenerator : MonoBehaviour
     {
         player = newPlayer;
     }
+
 }

@@ -30,6 +30,11 @@ public class MultiplayerLobbyManager : NetworkBehaviour
     public string GuestPlayerName { get; private set; }
 
     private bool localReady;
+    private bool cancelSearch;
+    private bool quickMatchCountdownStarted;
+
+    public bool IsQuickMatch { get; private set; }
+
 
     private void Awake()
     {
@@ -88,6 +93,10 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
     public async void CreateRoom()
     {
+        IsQuickMatch = false;
+
+        quickMatchCountdownStarted = false;
+
         GameManager.instance.currentGameMode =GameMode.Multiplayer;
 
         try
@@ -98,6 +107,14 @@ public class MultiplayerLobbyManager : NetworkBehaviour
             {
                 Data = new Dictionary<string, DataObject>
                 {
+                    {
+                        "LobbyType",new DataObject(DataObject.VisibilityOptions.Public,"Private")
+                    },
+
+                    {
+                        "Status",new DataObject(DataObject.VisibilityOptions.Public,"Waiting")
+                    },
+
                     {
                         "RelayCode", new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode)
                     },
@@ -126,6 +143,9 @@ public class MultiplayerLobbyManager : NetworkBehaviour
             StartHost();
 
             GameManager.instance.ui.OpenMultiplayerLobby();
+
+            GameManager.instance.ui.ConfigureLobbyUI(false);
+
             GameManager.instance.ui.SetLobbyRoomCode(currentLobby.LobbyCode);
         }
         catch(System.Exception e)
@@ -161,6 +181,8 @@ public class MultiplayerLobbyManager : NetworkBehaviour
             });
 
             GameManager.instance.ui.OpenMultiplayerLobby();
+
+            GameManager.instance.ui.ConfigureLobbyUI(false);
 
             GameManager.instance.ui.SetLobbyRoomCode(currentLobby.LobbyCode);
 
@@ -283,6 +305,8 @@ public class MultiplayerLobbyManager : NetworkBehaviour
     {
         Debug.Log("HOST REQUESTED MATCH START");
 
+        SetLobbyStatusPlaying();
+
         StartMatchClientRpc();
     }
 
@@ -326,6 +350,17 @@ public class MultiplayerLobbyManager : NetworkBehaviour
             }
 
             GameManager.instance.ui.UpdatePlayerNames(HostPlayerName,GuestPlayerName);
+
+            if (IsQuickMatch && currentLobby.Players.Count >= 2)
+            {
+                if (NetworkManager.Singleton.IsHost)
+                {
+                    ShowMatchFoundClientRpc();
+
+                    StartQuickMatchCountdown();
+                }
+            }
+
             bool hostReady = false;
             bool guestReady = false;
 
@@ -404,6 +439,216 @@ public class MultiplayerLobbyManager : NetworkBehaviour
         catch (System.Exception e)
         {
             Debug.LogError(e);
+        }
+    }
+
+    public async void CreatePublicRoom()
+    {
+        quickMatchCountdownStarted = false;
+
+        GameManager.instance.currentGameMode = GameMode.Multiplayer;
+
+        try
+        {
+            await CreateRelay();
+
+            var options = new CreateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject>
+                {
+                    {
+                        "LobbyType",new DataObject(DataObject.VisibilityOptions.Public,"Public")
+                    },
+
+                    {
+                        "Status",new DataObject(DataObject.VisibilityOptions.Public,"Waiting")
+                    },
+
+                    {
+                        "RelayCode",new DataObject(DataObject.VisibilityOptions.Member,relayJoinCode)
+                    },
+
+                    {
+                        "HostName",new DataObject(DataObject.VisibilityOptions.Public,LoginManager.Instance.GetPlayerName())
+                    }
+                }
+            };
+
+            currentLobby =await LobbyService.Instance.CreateLobbyAsync("QuickMatch_" +Random.Range(1000, 9999),2,options);
+
+            await LobbyService.Instance.UpdatePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId,new UpdatePlayerOptions
+                    {
+                        Data =new Dictionary<string,PlayerDataObject>
+                        {
+                            {
+                                "Ready",new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member,"False")
+                            }
+                        }
+                    });
+
+            ConfigureHostRelay();
+            StartHost();
+
+            GameManager.instance.ui.OpenMultiplayerLobby();
+
+            GameManager.instance.ui.ConfigureLobbyUI(true);
+
+            GameManager.instance.ui.SetLobbyRoomCode(currentLobby.LobbyCode);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
+    public async void QuickMatch()
+    {
+        IsQuickMatch = true;
+
+        cancelSearch = false;
+
+        GameManager.instance.ui.OpenSearchingPanel();
+        await Task.Delay(500);
+
+        try
+        {
+            QueryResponse response =await LobbyService.Instance.QueryLobbiesAsync();
+
+            if (cancelSearch)
+                return;
+
+            foreach (Lobby lobby in response.Results)
+            {
+                if (lobby.AvailableSlots <= 0)
+                    continue;
+
+                if (!lobby.Data.ContainsKey("LobbyType"))
+                    continue;
+
+                if (!lobby.Data.ContainsKey("Status"))
+                    continue;
+
+                if (lobby.Data["LobbyType"].Value!= "Public")
+                    continue;
+
+                if (lobby.Data["Status"].Value!= "Waiting")
+                    continue;
+
+                Debug.Log("Found Public Lobby");
+
+                currentLobby =await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id);
+
+                IsQuickMatch = true;
+
+                await LobbyService.Instance.UpdatePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId,new UpdatePlayerOptions
+                        {
+                            Data =new Dictionary<string,PlayerDataObject>
+                            {
+                                {
+                                    "PlayerName",new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member,LoginManager.Instance.GetPlayerName())
+                                },
+
+                                {
+                                    "Ready",new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member,"False")
+                                }
+                            }
+                        });
+
+                GameManager.instance.ui.CloseSearchingPanel();
+
+                GameManager.instance.ui.OpenMultiplayerLobby();
+
+                GameManager.instance.ui.ConfigureLobbyUI(true);
+
+                GameManager.instance.ui.SetLobbyRoomCode(currentLobby.LobbyCode);
+
+                string relayCode =currentLobby.Data["RelayCode"].Value;
+
+                await JoinRelay(relayCode);
+
+                return;
+            }
+
+            Debug.Log("No Public Lobby Found");
+
+            CreatePublicRoom();
+            GameManager.instance.ui.CloseSearchingPanel();
+        }
+        catch (System.Exception e)
+        {
+            GameManager.instance.ui.CloseSearchingPanel();
+            Debug.LogError(e);
+        }
+    }
+
+    private async void SetLobbyStatusPlaying()
+    {
+        if (currentLobby == null)
+            return;
+
+        try
+        {
+            await LobbyService.Instance
+                .UpdateLobbyAsync(currentLobby.Id,new UpdateLobbyOptions
+                    {
+                        Data =new Dictionary<string,DataObject>
+                        {
+                            {
+                                "Status",new DataObject(DataObject.VisibilityOptions.Public,"Playing")
+                            }
+                        }
+                    });
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
+    public void CancelQuickMatch()
+    {
+        cancelSearch = true;
+
+        GameManager.instance.ui.CloseSearchingPanel();
+    }
+
+    private async void StartQuickMatchCountdown()
+    {
+        if (quickMatchCountdownStarted)
+            return;
+
+        quickMatchCountdownStarted = true;
+
+        for (int i = 5; i > 0; i--)
+        {
+            UpdateCountdownClientRpc(i);
+
+            await Task.Delay(1000);
+        }
+
+        if (NetworkManager.Singleton != null &&NetworkManager.Singleton.IsHost)
+        {
+            StartMatchRpc();
+        }
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void UpdateCountdownClientRpc(int seconds)
+    {
+        if (GameManager.instance != null &&
+            GameManager.instance.ui != null)
+        {
+            GameManager.instance.ui.UpdateCountdown(seconds);
+        }
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void ShowMatchFoundClientRpc()
+    {
+        if (GameManager.instance != null &&
+            GameManager.instance.ui != null)
+        {
+            GameManager.instance.ui.ShowMatchFound();
         }
     }
 }

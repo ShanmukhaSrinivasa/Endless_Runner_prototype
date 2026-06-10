@@ -56,6 +56,12 @@ public class UI_Main : MonoBehaviour
     [SerializeField] private TextMeshProUGUI lossesText;
     [SerializeField] private TextMeshProUGUI bestDistanceText;
 
+    [SerializeField] private GameObject searchingPanel;
+    [SerializeField] private GameObject roomCodeContainer;
+    [SerializeField] private GameObject readyContainer;
+    [SerializeField] private TextMeshProUGUI matchmakingText;
+    [SerializeField] private TextMeshProUGUI lobbyTitleText;
+
     private void Start()
     {
         for (int i = 0; i < sliders.Length; i++)
@@ -191,7 +197,16 @@ public class UI_Main : MonoBehaviour
         multiplayerLobbyPanel.SetActive(true);
 
         playerCountText.text = "Players: 1/2";
-        statusText.text = "Waiting for players...";
+
+        if (MultiplayerLobbyManager.Instance != null &&
+            MultiplayerLobbyManager.Instance.IsQuickMatch)
+        {
+            statusText.text = "Searching For Opponent...";
+        }
+        else
+        {
+            statusText.text = "Waiting for players...";
+        }
 
         bool isHost = false;
 
@@ -280,13 +295,13 @@ public class UI_Main : MonoBehaviour
         {
             resultTitleText.text = "VICTORY";
             resultText.text = "WINNER";
-            winnerNameText.text = "You Won!";
+            winnerNameText.text = "Reward: +100 Coins";
         }
         else
         {
             resultTitleText.text = "GAME OVER";
             resultText.text = "ELIMINATED";
-            winnerNameText.text = "Winner: " + winnerName;
+            winnerNameText.text ="Winner: " + winnerName + "\nYou get +25 Coins";
         }
 
         multiplayerDistanceText.text ="Distance: " +distance.ToString("#,#") +" m";
@@ -299,6 +314,11 @@ public class UI_Main : MonoBehaviour
 
     public void UpdateReadyStatus(bool hostReady,bool guestReady)
     {
+        if (MultiplayerLobbyManager.Instance != null && MultiplayerLobbyManager.Instance.IsQuickMatch)
+        {
+            return;
+        }
+
         hostReadyText.text =hostReady? "Host Ready: YES": "Host Ready: NO";
 
         guestReadyText.text =guestReady? "Guest Ready: YES": "Guest Ready: NO";
@@ -321,5 +341,46 @@ public class UI_Main : MonoBehaviour
 
         bestDistanceText.text = "Best Distance: " + Mathf.RoundToInt(PlayerStats.BestDistance) + "m";
     }
+
+    public void OpenSearchingPanel()
+    {
+        searchingPanel.SetActive(true);
+    }
+
+    public void CloseSearchingPanel()
+    {
+        searchingPanel.SetActive(false);
+    }
+
+    public void ConfigureLobbyUI(bool isQuickMatch)
+    {
+        roomCodeContainer.SetActive(!isQuickMatch);
+        readyContainer.SetActive(!isQuickMatch);
+
+        if (isQuickMatch)
+        {
+            matchmakingText.gameObject.SetActive(true);
+
+            matchmakingText.text = "Searching For Opponent...";
+
+            lobbyTitleText.text = "MATCHMAKING";
+        }
+        else
+        {
+            matchmakingText.gameObject.SetActive(false);
+
+            lobbyTitleText.text = "FRIEND ROOM";
+        }
+    }
+
+    public void ShowMatchFound()
+    {
+        matchmakingText.text = "Opponent Found!";
+    }
+    public void UpdateCountdown(int seconds)
+    {
+        matchmakingText.text = "Starting In " + seconds;
+    }
+
 
 }

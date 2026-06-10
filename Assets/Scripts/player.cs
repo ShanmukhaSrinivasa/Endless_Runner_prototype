@@ -135,7 +135,7 @@ public class player : NetworkBehaviour
 
         if (IsOwner)
         {
-            Debug.Log("Unlocked = " + playerUnlocked);
+            //Debug.Log("Unlocked = " + playerUnlocked);
         }
 
         if (playerUnlocked)
