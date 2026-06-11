@@ -99,6 +99,8 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
         GameManager.instance.currentGameMode =GameMode.Multiplayer;
 
+        GameManager.instance.ui.OpenSearchingPanel("Creating Room...");
+
         try
         {
             await CreateRelay();
@@ -142,6 +144,8 @@ public class MultiplayerLobbyManager : NetworkBehaviour
             ConfigureHostRelay();
             StartHost();
 
+            GameManager.instance.ui.CloseSearchingPanel();
+
             GameManager.instance.ui.OpenMultiplayerLobby();
 
             GameManager.instance.ui.ConfigureLobbyUI(false);
@@ -150,6 +154,8 @@ public class MultiplayerLobbyManager : NetworkBehaviour
         }
         catch(System.Exception e)
         {
+            GameManager.instance.ui.CloseSearchingPanel();
+
             Debug.LogError(e);
         }
     }
@@ -509,7 +515,7 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
         cancelSearch = false;
 
-        GameManager.instance.ui.OpenSearchingPanel();
+        GameManager.instance.ui.OpenSearchingPanel("Searching For Opponent...");
         await Task.Delay(500);
 
         try

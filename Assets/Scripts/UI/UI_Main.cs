@@ -63,6 +63,7 @@ public class UI_Main : MonoBehaviour
     [SerializeField] private TextMeshProUGUI lobbyTitleText;
     [SerializeField] private GameObject readyButton;
     [SerializeField] private Button pauseButton;
+    [SerializeField] private TMP_Text searchingText;
 
     private void Start()
     {
@@ -357,9 +358,17 @@ public class UI_Main : MonoBehaviour
         bestDistanceText.text = "Best: " + Mathf.RoundToInt(PlayerStats.BestDistance) + "m";
     }
 
-    public void OpenSearchingPanel()
+    public void OpenSearchingPanel(string message = "Searching For Opponent...")
     {
-        searchingPanel.SetActive(true);
+        if (searchingPanel != null)
+        {
+            searchingPanel.SetActive(true);
+        }
+
+        if (searchingText != null)
+        {
+            searchingText.text = message;
+        }
     }
 
     public void CloseSearchingPanel()
