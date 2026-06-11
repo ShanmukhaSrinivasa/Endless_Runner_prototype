@@ -354,7 +354,7 @@ public class UI_Main : MonoBehaviour
 
         lossesText.text = "Losses: " + PlayerStats.Losses;
 
-        bestDistanceText.text = "Best Distance: " + Mathf.RoundToInt(PlayerStats.BestDistance) + "m";
+        bestDistanceText.text = "Best: " + Mathf.RoundToInt(PlayerStats.BestDistance) + "m";
     }
 
     public void OpenSearchingPanel()
