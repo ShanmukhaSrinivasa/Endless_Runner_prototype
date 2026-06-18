@@ -481,7 +481,7 @@ public class PlayerSinglePlayer : MonoBehaviour
 
         rb.linearVelocity = Vector2.zero;
 
-        transform.position = lastSafePosition + new Vector3(10f, 1f, 0f);
+        transform.position = lastSafePosition + new Vector3(5f, 4f, 0f);
 
         StartCoroutine(ReviveProtection());
     }
