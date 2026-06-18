@@ -3,6 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class UI_Main : MonoBehaviour
 {
@@ -64,6 +65,17 @@ public class UI_Main : MonoBehaviour
     [SerializeField] private GameObject readyButton;
     [SerializeField] private Button pauseButton;
     [SerializeField] private TMP_Text searchingText;
+
+    [SerializeField] private TextMeshProUGUI countdownText;
+
+    [SerializeField] private GameObject offlinePanel;
+
+    [Header("Multiplayer Disconnect info")]
+    [SerializeField] private GameObject disconnectPanel;
+    [SerializeField] private TMP_Text disconnectText;
+
+    [SerializeField] private GameObject quickMatchTimeoutPanel;
+    [SerializeField] private TMP_Text waitingTimerText;
 
     private void Start()
     {
@@ -141,7 +153,12 @@ public class UI_Main : MonoBehaviour
         Application.Quit();
     }
 
-    public void RestartGameButton() => GameManager.instance.RestartLevel(); 
+    public void RestartGameButton()
+    {
+        GameManager.instance.FinalizeRun();
+
+        GameManager.instance.RestartLevel();
+    }
 
     public void OpenEndGameUI()
     {
@@ -324,7 +341,10 @@ public class UI_Main : MonoBehaviour
     }
     public void ReturnToMainMenu()
     {
+        GameManager.instance.FinalizeRun();
+
         Time.timeScale = 1f;
+
         SceneManager.LoadScene("Endless_Runner");
     }
 
@@ -411,5 +431,85 @@ public class UI_Main : MonoBehaviour
         matchmakingText.text = "Starting In " + seconds;
     }
 
+    public void RefreshHostUI()
+    {
+        bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost;
 
+        startMatchButton.gameObject.SetActive(isHost);
+    }
+
+    public IEnumerator ReviveCountdown()
+    {
+        countdownText.gameObject.SetActive(true);
+
+        countdownText.text = "3";
+        yield return new WaitForSecondsRealtime(1f);
+
+        countdownText.text = "2";
+        yield return new WaitForSecondsRealtime(1f);
+
+        countdownText.text = "1";
+        yield return new WaitForSecondsRealtime(1f);
+
+        countdownText.text = "GO!";
+        yield return new WaitForSecondsRealtime(.5f);
+
+        countdownText.gameObject.SetActive(false);
+
+        Time.timeScale = 1f;
+    }
+
+    public void OpenOfflinePanel()
+    {
+        if (offlinePanel != null)
+        {
+            offlinePanel.SetActive(true);
+        }
+    }
+
+    public void CloseOfflinePanel()
+    {
+        if (offlinePanel != null)
+        {
+            offlinePanel.SetActive(false);
+        }
+    }
+
+    public void RetryInternet()
+    {
+        if (Application.internetReachability == NetworkReachability.NotReachable)
+        {
+            return;
+        }
+
+        CloseOfflinePanel();
+    }
+
+    public void ShowDisconnectMessage(string message)
+    {
+        disconnectPanel.SetActive(true);
+
+        if (disconnectText != null)
+        {
+            disconnectText.text = message;
+        }
+    }
+
+    public void UpdateWaitingTimer(int seconds)
+    {
+        if (waitingTimerText != null)
+        {
+            waitingTimerText.text = $"{seconds}";
+        }
+    }
+
+    public void ShowQuickMatchTimeout()
+    {
+        quickMatchTimeoutPanel.SetActive(true);
+    }
+
+    public void HideQuickMatchTimeout()
+    {
+        quickMatchTimeoutPanel.SetActive(false);
+    }
 }

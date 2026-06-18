@@ -31,6 +31,9 @@ public class GameManager : MonoBehaviour
 
     public bool gamePlayStarted = false;
     private bool isGameOver = false;
+    private bool hasRevived = false;
+    private bool saveCompleted = false;
+    private bool runSaved = false;
 
     private void Awake()
     {
@@ -241,6 +244,13 @@ public class GameManager : MonoBehaviour
 
     public void SaveInfo()
     {
+        if (runSaved)
+        {
+            return;
+        }
+
+        runSaved = true;
+
         int myCoins = PlayerPrefs.GetInt("Coins");
 
         PlayerPrefs.SetInt("Coins", myCoins + coins);
@@ -253,6 +263,8 @@ public class GameManager : MonoBehaviour
         {
             PlayerPrefs.SetFloat("HighScore", score);
         }
+
+        PlayerPrefs.Save();
     }
 
     public void GameEnded()
@@ -263,8 +275,6 @@ public class GameManager : MonoBehaviour
         isGameOver = true;
 
         Time.timeScale = 0f;
-
-        SaveInfo();
 
         if (IsSinglePlayer())
         {
@@ -316,5 +326,46 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("CurrentColorPrice",currentPrice);
 
         PlayerPrefs.Save();
+    }
+
+    public bool HasRevived()
+    {
+        return hasRevived;
+    }
+
+    public void MarkRevived()
+    {
+        hasRevived = true;
+    }
+
+    public void RevivePlayer()
+    {
+        if (hasRevived)
+        {
+            return;
+        }
+
+        hasRevived = true;
+
+        isGameOver = false;
+
+        ui.OpenInGameUI();
+
+        if (singlePlayerPlayer != null)
+        {
+            singlePlayerPlayer.Revive();
+        }
+
+        StartCoroutine(ui.ReviveCountdown());
+    }
+
+    public void FinalizeRun()
+    {
+        if (saveCompleted)
+            return;
+
+        saveCompleted = true;
+
+        SaveInfo();
     }
 }

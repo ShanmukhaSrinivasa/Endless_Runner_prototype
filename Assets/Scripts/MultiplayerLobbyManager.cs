@@ -24,7 +24,7 @@ public class MultiplayerLobbyManager : NetworkBehaviour
     private Lobby currentLobby;
 
     private float lobbyRefreshTimer;
-    private const float LOBBY_REFRESH_INTERVAL = 2f;
+    private const float LOBBY_REFRESH_INTERVAL = 1f;
 
     public string HostPlayerName { get; private set; }
     public string GuestPlayerName { get; private set; }
@@ -32,6 +32,10 @@ public class MultiplayerLobbyManager : NetworkBehaviour
     private bool localReady;
     private bool cancelSearch;
     private bool quickMatchCountdownStarted;
+
+    private float waitingForOpponentTimer;
+    private bool waitingTimeoutShown;
+    private bool isLeavingLobby;
 
     public bool IsQuickMatch { get; private set; }
 
@@ -69,6 +73,23 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
             RefreshLobby();
         }
+
+        if (IsQuickMatch && currentLobby.Players.Count < 2 && !waitingTimeoutShown)
+        {
+            waitingForOpponentTimer -= Time.deltaTime;
+
+            if (GameManager.instance != null && GameManager.instance.ui != null)
+            {
+                GameManager.instance.ui.UpdateWaitingTimer(Mathf.CeilToInt(waitingForOpponentTimer));
+            }
+
+            if (waitingForOpponentTimer <= 0 && !waitingTimeoutShown)
+            {
+                waitingTimeoutShown = true;
+
+                GameManager.instance.ui.ShowQuickMatchTimeout();
+            }
+        }
     }
 
     private void OnClientConnected(ulong clientId)
@@ -89,10 +110,33 @@ public class MultiplayerLobbyManager : NetworkBehaviour
     private void OnClientDisconnected(ulong clientId)
     {
         Debug.Log("CLIENT DISCONNECTED: " + clientId);
+
+        if (GameManager.instance == null)
+            return;
+
+        if (GameManager.instance.currentGameMode != GameMode.Multiplayer)
+            return;
+
+        HandleDisconnect();
+    }
+
+    private async void HandleDisconnect()
+    {
+        if (GameManager.instance != null && GameManager.instance.ui != null)
+        {
+            GameManager.instance.ui.ShowDisconnectMessage("Opponent Disconnected\nReturning To Menu...");
+        }
+
+        await Task.Delay(3000);
+
+        LeaveLobby();
     }
 
     public async void CreateRoom()
     {
+        if (!CheckInternet())
+            return;
+
         IsQuickMatch = false;
 
         quickMatchCountdownStarted = false;
@@ -128,6 +172,9 @@ public class MultiplayerLobbyManager : NetworkBehaviour
             };
             currentLobby = await LobbyService.Instance.CreateLobbyAsync("PixelDashRoom",5,options);
 
+            lobbyRefreshTimer = LOBBY_REFRESH_INTERVAL;
+            isLeavingLobby = false;
+
             await LobbyService.Instance.UpdatePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId,new UpdatePlayerOptions
             {
                 Data = new Dictionary<string, PlayerDataObject>
@@ -162,7 +209,10 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
     public async void JoinRoom()
     {
-        GameManager.instance.currentGameMode =GameMode.Multiplayer;
+        if (!CheckInternet())
+            return;
+
+        GameManager.instance.currentGameMode = GameMode.Multiplayer;
 
         try
         {
@@ -171,6 +221,9 @@ public class MultiplayerLobbyManager : NetworkBehaviour
             Debug.Log("Trying to join: " + roomCode);
 
             currentLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(roomCode);
+
+            lobbyRefreshTimer = LOBBY_REFRESH_INTERVAL;
+            isLeavingLobby = false;
 
             await LobbyService.Instance.UpdatePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId,new UpdatePlayerOptions
             {
@@ -328,11 +381,42 @@ public class MultiplayerLobbyManager : NetworkBehaviour
         GameManager.instance.BeginGamePlay();
     }
 
+    private bool refreshingLobby;
+
     private async void RefreshLobby()
     {
+        if (refreshingLobby)
+            return;
+
+        if (isLeavingLobby)
+            return;
+
+        if (currentLobby == null)
+            return;
+
+        refreshingLobby = true;
+
+        string lobbyId = currentLobby.Id;
+
         try
         {
-            currentLobby =await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
+            Debug.Log("Refreshing Lobby: " + lobbyId);
+
+            Lobby refreshedLobby = await LobbyService.Instance.GetLobbyAsync(lobbyId);
+
+            if (refreshedLobby == null)
+            {
+                Debug.LogWarning("Lobby returned null");
+                return;
+            }
+
+            currentLobby = refreshedLobby;
+
+            if (GameManager.instance == null)
+                return;
+
+            if (GameManager.instance.ui == null)
+                return;
 
             GameManager.instance.ui.UpdatePlayerCount(currentLobby.Players.Count);
 
@@ -355,7 +439,7 @@ public class MultiplayerLobbyManager : NetworkBehaviour
                 }
             }
 
-            GameManager.instance.ui.UpdatePlayerNames(HostPlayerName,GuestPlayerName);
+            GameManager.instance.ui.UpdatePlayerNames(HostPlayerName, GuestPlayerName);
 
             if (IsQuickMatch && currentLobby.Players.Count >= 2 && !quickMatchCountdownStarted)
             {
@@ -376,7 +460,7 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
                 if (hostPlayer.Data != null && hostPlayer.Data.ContainsKey("Ready"))
                 {
-                    bool.TryParse(hostPlayer.Data["Ready"].Value,out hostReady);
+                    bool.TryParse(hostPlayer.Data["Ready"].Value, out hostReady);
                 }
             }
 
@@ -386,28 +470,45 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
                 if (guestPlayer.Data != null && guestPlayer.Data.ContainsKey("Ready"))
                 {
-                    bool.TryParse(guestPlayer.Data["Ready"].Value,out guestReady);
+                    bool.TryParse(guestPlayer.Data["Ready"].Value, out guestReady);
                 }
             }
 
-            GameManager.instance.ui.UpdatePlayerNames(HostPlayerName,GuestPlayerName);
+            GameManager.instance.ui.UpdatePlayerNames(HostPlayerName, GuestPlayerName);
 
-            GameManager.instance.ui.UpdateReadyStatus(hostReady,guestReady);
+            GameManager.instance.ui.UpdateReadyStatus(hostReady, guestReady);
+
+            GameManager.instance.ui.RefreshHostUI();
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogWarning("Lobby refresh failed: " + e.Message);
+
+            currentLobby = null;
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning("Lobby Refresh Failed: " + e.Message);
+            Debug.LogError(e);
+        }
+        finally
+        {
+            refreshingLobby = false;
         }
     }
 
     public async void LeaveLobby()
     {
+        isLeavingLobby = true;
+
         try
         {
             if (currentLobby != null)
             {
                 await LobbyService.Instance.RemovePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId);
             }
+
+            cancelSearch = true;
+            waitingTimeoutShown = true;
 
             currentLobby = null;
 
@@ -452,6 +553,9 @@ public class MultiplayerLobbyManager : NetworkBehaviour
     {
         quickMatchCountdownStarted = false;
 
+        waitingForOpponentTimer = 30f;
+        waitingTimeoutShown = false;
+
         GameManager.instance.currentGameMode = GameMode.Multiplayer;
 
         try
@@ -482,6 +586,9 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
             currentLobby =await LobbyService.Instance.CreateLobbyAsync("QuickMatch_" +Random.Range(1000, 9999),2,options);
 
+            lobbyRefreshTimer = LOBBY_REFRESH_INTERVAL;
+            isLeavingLobby = false;
+
             await LobbyService.Instance.UpdatePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId,new UpdatePlayerOptions
                     {
                         Data =new Dictionary<string,PlayerDataObject>
@@ -511,6 +618,9 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
     public async void QuickMatch()
     {
+        if (!CheckInternet())
+            return;
+
         IsQuickMatch = true;
 
         cancelSearch = false;
@@ -546,6 +656,9 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
                 currentLobby =await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id);
 
+                lobbyRefreshTimer = LOBBY_REFRESH_INTERVAL;
+                isLeavingLobby = false;
+
                 IsQuickMatch = true;
 
                 await LobbyService.Instance.UpdatePlayerAsync(currentLobby.Id,AuthenticationService.Instance.PlayerId,new UpdatePlayerOptions
@@ -579,6 +692,53 @@ public class MultiplayerLobbyManager : NetworkBehaviour
 
             Debug.Log("No Public Lobby Found");
 
+            await Task.Delay(Random.Range(500, 1500));
+
+            response = await LobbyService.Instance.QueryLobbiesAsync();
+
+            foreach (Lobby lobby in response.Results)
+            {
+                if (lobby.AvailableSlots <= 0)
+                {
+                    continue;
+                }
+
+                if (!lobby.Data.ContainsKey("LobbyType"))
+                {
+                    continue;
+                }
+
+                if (!lobby.Data.ContainsKey("Status"))
+                {
+                    continue;
+                }
+
+                if (lobby.Data["LobbyType"].Value != "Public")
+                {
+                    continue;
+                }
+
+                if (lobby.Data["Status"].Value != "Waiting")
+                {
+                    continue;
+                }
+
+                Debug.Log("Found Lobby After Retry");
+
+                currentLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id);
+
+                lobbyRefreshTimer = LOBBY_REFRESH_INTERVAL;
+                isLeavingLobby = false;
+
+                waitingTimeoutShown = false;
+
+                string relayCode = currentLobby.Data["RelayCode"].Value;
+
+                await JoinRelay(relayCode);
+
+                return;
+            }
+
             CreatePublicRoom();
         }
         catch (System.Exception e)
@@ -610,6 +770,20 @@ public class MultiplayerLobbyManager : NetworkBehaviour
         {
             Debug.LogError(e);
         }
+    }
+
+    public void ContinueSearching()
+    {
+        waitingForOpponentTimer = 30f;
+        waitingTimeoutShown = false;
+
+        GameManager.instance.ui.UpdateWaitingTimer(30);
+        GameManager.instance.ui.HideQuickMatchTimeout();
+    }
+
+    public void CancelQuickMatchLobby()
+    {
+        LeaveLobby();
     }
 
     public void CancelQuickMatch()
@@ -657,5 +831,20 @@ public class MultiplayerLobbyManager : NetworkBehaviour
         {
             GameManager.instance.ui.ShowMatchFound();
         }
+    }
+
+    private bool HasInternet()
+    {
+        return Application.internetReachability != NetworkReachability.NotReachable;
+    }
+
+    private bool CheckInternet()
+    {
+        if (HasInternet())
+            return true;
+
+        GameManager.instance.ui.OpenOfflinePanel();
+
+        return false;
     }
 }

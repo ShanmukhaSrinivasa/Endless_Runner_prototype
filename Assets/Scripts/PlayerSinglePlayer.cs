@@ -72,6 +72,9 @@ public class PlayerSinglePlayer : MonoBehaviour
     private bool canGrabLedge = true;
     private bool canClimb;
 
+    private Vector3 lastSafePosition;
+
+    private bool waitingForReviveCountdown;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -81,6 +84,8 @@ public class PlayerSinglePlayer : MonoBehaviour
         sr = GetComponent<SpriteRenderer>();
 
         GameManager.instance.singlePlayerPlayer = this;
+
+        lastSafePosition = transform.position;
 
         speedMilestone = milestoneIncreaser;
         defaultSpeed = moveSpeed;
@@ -117,12 +122,22 @@ public class PlayerSinglePlayer : MonoBehaviour
             StartCoroutine(Death());
         }
 
+        if (isGrounded)
+        {
+            lastSafePosition = transform.position;
+        }
+
         if (isDead)
         {
             return;
         }
 
         if (IsKnocked)
+        {
+            return;
+        }
+
+        if (waitingForReviveCountdown)
         {
             return;
         }
@@ -161,6 +176,11 @@ public class PlayerSinglePlayer : MonoBehaviour
 
     public void Damage()
     {
+        if (!canBeKnocked)
+        {
+            return;
+        }
+
         bloodSplatterFX.Play();
 
         if (extraLife)
@@ -449,5 +469,34 @@ public class PlayerSinglePlayer : MonoBehaviour
         Gizmos.DrawLine(transform.position, new Vector2(transform.position.x, transform.position.y - groundDistance));
         Gizmos.DrawLine(transform.position, new Vector2(transform.position.x, transform.position.y + ceilingCheckDistance));
         Gizmos.DrawWireCube(wallCheck.position, wallSize);
+    }
+
+    public void Revive()
+    {
+        isDead = false;
+
+        canBeKnocked = true;
+
+        anim.SetBool("IsDead", false);
+
+        rb.linearVelocity = Vector2.zero;
+
+        transform.position = lastSafePosition + new Vector3(10f, 1f, 0f);
+
+        StartCoroutine(ReviveProtection());
+    }
+
+    private IEnumerator ReviveProtection()
+    {
+        canBeKnocked = false;
+
+        yield return new WaitForSeconds(3f);
+
+        canBeKnocked = true;
+    }
+
+    public void EnableAfterRevive()
+    {
+        waitingForReviveCountdown = false;
     }
 }
